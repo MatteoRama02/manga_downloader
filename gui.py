@@ -6,8 +6,30 @@ from PyQt5.QtGui import QPixmap,QIcon,QFont
 import requests
 from pyqttoast import Toast, ToastPreset, ToastPosition
 from mangaworld_downloader import research_thumbnails,research_manga, volumes_with_chapter_link, create_data_volumes_folders, download_volumes_images, create_pdf, remove_data_folder,number_of_images_in_chapter,download_chapter_images
+import platform
+import pygame
 
-
+ 
+def prevent_sleep():
+    if platform.system() == "Windows":
+        import ctypes
+        # Prevents the system from entering sleep or turning off the display
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
+    elif platform.system() == "Darwin":  # macOS
+        import subprocess
+        # Prevents the system from sleeping
+        subprocess.call('caffeinate', shell=True)
+    # On Linux, this is typically managed by the system, and there is no simple standard way to handle it.
+    
+def restore_sleep():
+    if platform.system() == "Windows":
+        import ctypes
+        # Restores the system's ability to sleep or turn off the display
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+    elif platform.system() == "Darwin":  # macOS
+        # No need for specific actions; 'caffeinate' exits when the app is closed
+        pass
+    
 class SplashScreen(QSplashScreen):
     def __init__(self, pixmap, parent=None):
         super().__init__(pixmap, Qt.WindowStaysOnTopHint, parent)
@@ -20,8 +42,11 @@ class SplashScreen(QSplashScreen):
         
 class DownloadThread(QThread):
     progress = pyqtSignal(int)
-    status_update = pyqtSignal(str)  # New signal for status updates
-
+    status_update = pyqtSignal(str)  # Signal for status updates
+    
+    def __del__(self):
+        restore_sleep()
+        
     def __init__(self, manga_name, selectedManga, mangaDict, parent=None):
         super().__init__(parent)
         self.manga_name = manga_name
@@ -45,24 +70,27 @@ class DownloadThread(QThread):
 
         for i, (vol_name, chapters) in enumerate(vol_chap_dict.items()):
             for j, chap_link in enumerate(chapters):
-                # Update status
-                self.status_update.emit(f"Downloading {vol_name} Chapter {j + 1}")
-
-                # Perform the download operation
                 number_of_images = number_of_images_in_chapter(chap_link)
                 download_chapter_images(chap_link, i, str(j), selected_manga, number_of_images)
 
-                # Update progress
                 current_chapter += 1
                 self.progress.emit(int((current_chapter / total_chapters) * 100))
 
+        self.status_update.emit(f"Generando i PDF....")
         create_pdf(selected_manga)
-
         remove_data_folder(selected_manga)
-        self.status_update.emit("Download completed")
-        # make a sound when the download is completed
-        os.system("aplay sound.wav")
+        self.status_update.emit(f"Pdf generati!")
+        
+        # play sound when download is completed
+        pygame.mixer.init()
+        # Load and play the sound
+        pygame.mixer.music.load('src/sounds/finish.mp3')
+        pygame.mixer.music.play()
 
+        # Keep the script running until the sound is finished
+        while pygame.mixer.music.get_busy():
+            pygame.time.Clock().tick(10)
+        
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -77,7 +105,7 @@ class MyWindow(QMainWindow):
     def initUI(self):
         # Set the title and size of the window
         self.setWindowTitle("MangaWorld Downloader")
-        self.setGeometry(100, 100, 500, 450)
+        self.setGeometry(100, 100, 600, 550)
 
         # Center the window
         self.center()
@@ -94,7 +122,7 @@ class MyWindow(QMainWindow):
 
         # Image label
         img = QLabel(self)
-        pixmap = QPixmap('MangaWorldLogo.svg')
+        pixmap = QPixmap('src/img/MangaWorldLogo.svg')
 
         if not pixmap.isNull():
             pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -141,7 +169,7 @@ class MyWindow(QMainWindow):
             pixmap.loadFromData(requests.get(url).content)
             
             if not pixmap.isNull():
-                pixmap = pixmap.scaled(100, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pixmap = pixmap.scaled(150, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 label.setPixmap(pixmap)
             else:
                 print("Failed to load image")
@@ -163,18 +191,12 @@ class MyWindow(QMainWindow):
         main_layout.addLayout(trending_label_layout)
         main_layout.addLayout(carousel_layout)
 
-        self.progress_bar = QProgressBar(self)
-        self.progress_bar.setAlignment(Qt.AlignCenter)
-        self.progress_bar.setValue(0)
-        self.progress_bar.setStyleSheet("QProgressBar::chunk { background-color: green; }")
-
-        main_layout.addWidget(self.progress_bar)
-        # Add a button to open the Download Manager
         self.download_manager_button = QPushButton("Open Download Manager", self)
         self.download_manager_button.clicked.connect(self.open_download_manager)
         main_layout.addWidget(self.download_manager_button)
+        
     # Shows a toast notification every time the button is clicked
-    def show_toast(self,titolo, messaggio, preset=ToastPreset.SUCCESS ):
+    def show_toast(self,titolo, messaggio, preset=ToastPreset.SUCCESS):
         toast = Toast(self)
              # Init font
         # Init font
@@ -196,6 +218,7 @@ class MyWindow(QMainWindow):
         frame_geo.moveCenter(screen)
         self.move(frame_geo.topLeft())
 
+   
     def start_download(self):
         manga_name = self.line_edit.text()
         if not manga_name:
@@ -212,28 +235,50 @@ class MyWindow(QMainWindow):
             selected_manga = list(manga_dict.keys())[0]
             self.download_thread = DownloadThread(manga_name, selected_manga, manga_dict, parent=self)
             self.download_thread.progress.connect(self.update_progress)
+            self.download_thread.status_update.connect(self.handle_status_update)  # Connect to new method
             self.download_thread.start()
             self.download_manager.add_download(selected_manga, self.download_thread)
             self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
             return
         
-        # Show the MangaSelectionDialog to the user
         dialog = MangaSelectionDialog(manga_dict, self)
         if dialog.exec_() == QDialog.Accepted:
             selected_manga = dialog.selected_manga
             self.download_thread = DownloadThread(manga_name, selected_manga, manga_dict, parent=self)
             self.download_thread.progress.connect(self.update_progress)
+            self.download_thread.status_update.connect(self.handle_status_update)  # Connect to new method
             self.download_thread.start()
             self.download_manager.add_download(selected_manga, self.download_thread)
-            self.show_notification("Download Started", f"Downloading manga: {selected_manga}")
+            self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
 
         else:
-            # Handle the case where the user cancels the dialog
             QMessageBox.information(self, "Cancelled", "No manga selected.")
 
+    def handle_status_update(self, status):
+        self.show_toast("Download Status", status)
+        if status == "Download completed":
+            # Optionally, you can trigger other actions here if needed
+            pass
+        
     def open_download_manager(self):
         self.download_manager.show()
     def update_progress(self, value):
+        print(f"Progress: {value}%")
+     
+     
+        
+class ProgressBarWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setAlignment(Qt.AlignCenter)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setStyleSheet("QProgressBar::chunk { background-color: green; }")
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.progress_bar)
+        self.setLayout(layout)
+
+    def set_progress(self, value):
         self.progress_bar.setValue(value)
 
 class DownloadManagerWindow(QMainWindow):
@@ -243,9 +288,16 @@ class DownloadManagerWindow(QMainWindow):
         self.setGeometry(150, 150, 600, 400)
 
         self.downloads_table = QTableWidget(self)
-        self.downloads_table.setColumnCount(2)
-        self.downloads_table.setHorizontalHeaderLabels(["Manga", "Status"])
+        # not editable
+        self.downloads_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        
+        # Add the progress bar column
+        self.downloads_table.setColumnCount(3)
+        self.downloads_table.setHorizontalHeaderLabels(["Manga", "Status", "Progress"])
         self.downloads_table.horizontalHeader().setStretchLastSection(True)
+
+        #status column width max content of the cell
+        self.downloads_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
 
         layout = QVBoxLayout()
         layout.addWidget(self.downloads_table)
@@ -262,22 +314,25 @@ class DownloadManagerWindow(QMainWindow):
 
         manga_item = QTableWidgetItem(manga_name)
         status_item = QTableWidgetItem("Starting...")
+        progress_widget = ProgressBarWidget()
 
         self.downloads_table.setItem(row_position, 0, manga_item)
         self.downloads_table.setItem(row_position, 1, status_item)
+        self.downloads_table.setCellWidget(row_position, 2, progress_widget)
 
         # Track download in the downloads dict
-        self.downloads[manga_name] = (row_position, download_thread)
+        self.downloads[manga_name] = (row_position, download_thread, progress_widget)
 
         download_thread.status_update.connect(lambda status, row=row_position: self.update_status(row, status))
         download_thread.progress.connect(lambda progress, row=row_position: self.update_progress(row, progress))
 
     def update_status(self, row, status):
-        self.downloads_table.setItem(row, 1, QTableWidgetItem(status))
+        self.downloads_table.item(row, 1).setText(status)
 
     def update_progress(self, row, progress):
-        self.downloads_table.setItem(row, 1, QTableWidgetItem(f"In progress: {progress}%"))
-    
+        progress_widget = self.downloads[self.downloads_table.item(row, 0).text()][2]
+        progress_widget.set_progress(progress)
+
 
 class MangaSelectionDialog(QDialog):
     def __init__(self, manga_dict, parent=None):
@@ -328,6 +383,7 @@ def choose_manga(manga_dict):
         return None
 
 app = QApplication(sys.argv)
+
 window = MyWindow()
 window.show()
 sys.exit(app.exec_())

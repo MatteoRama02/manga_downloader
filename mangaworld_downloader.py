@@ -3,15 +3,21 @@ import requests
 import bs4
 import os
 import subprocess
+import re
 import shutil
 import threading
 from PIL import Image
 from PyPDF2 import PdfMerger
 import io
+import img2pdf
 
 RESEARCH_STRING = "https://www.mangaworld.so/archive?keyword="
 
 CHAPTERS_STRING = "?style=pages"
+
+def natural_sort_key(s):
+    """Sort strings in a natural order."""
+    return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
 
 def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='#', printEnd="\r"):
@@ -362,7 +368,6 @@ def create_pdf(vol_chap_num_pages: dict[str, list[str]], selected_manga: str) ->
 
         merger.close()
 
-
 def create_pdf(manga_name) -> None:
     data_path = os.path.join("Data", manga_name)
     
@@ -371,12 +376,13 @@ def create_pdf(manga_name) -> None:
         if not os.path.isdir(volume_path):
             continue
         
-        merger = PdfMerger()
-        
         chapter_list = os.listdir(volume_path)
+        chapter_list.sort(key=natural_sort_key)
         
-        chapter_list.sort()
+        print(f"Processing volume {volume}...")
+        print(f"Chapters: {chapter_list}")
         
+        image_paths = []
         for chapter in chapter_list:
             chapter_path = os.path.join(volume_path, chapter)
             if not os.path.isfile(chapter_path) or not chapter.lower().endswith('.jpg'):
@@ -384,27 +390,24 @@ def create_pdf(manga_name) -> None:
             
             try:
                 with Image.open(chapter_path) as img:
-                    # Convert image to PDF
-                    pdf_bytes = io.BytesIO()
-                    img.save(pdf_bytes, format='PDF')
-                    pdf_bytes.seek(0)
-                    
-                    # Add the PDF to the merger
-                    merger.append(pdf_bytes)
+                    img = img.convert('RGB')  # Ensure the image is in RGB mode
+                    image_paths.append(chapter_path)  # Add the file path directly to the list
             except Exception as e:
                 print(f"Error processing image {chapter_path}: {e}")
         
-        
-        output_pdf_path = f"{manga_name}_Volume_{int(volume)+1}.pdf"
+        if len(image_paths) == 0:
+            print(f"No images found for volume {volume}. Skipping...")
+            continue
+        else:
+            output_pdf_path = f"{manga_name}_Volume_{int(volume)+1}.pdf"
         
         try:
             with open(output_pdf_path, "wb") as output_file:
-                merger.write(output_file)
+                output_file.write(img2pdf.convert(image_paths))
         except Exception as e:
             print(f"Error writing PDF file {output_pdf_path}: {e}")
-        finally:
-            merger.close()
 
+        print(f"Volume {volume} saved as {output_pdf_path}.")
 
 def main():
     if len(sys.argv) != 2:

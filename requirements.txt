@@ -4,3 +4,5 @@ Pillow
 beautifulsoup4
 PyQt5
 pyqt-toast-notification
+img2pdf
+playsound
