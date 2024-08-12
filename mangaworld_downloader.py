@@ -367,7 +367,7 @@ def create_pdf(vol_chap_num_pages: dict[str, list[str]], selected_manga: str) ->
             merger.write(output_file)
 
         merger.close()
-
+        
 def create_pdf(manga_name) -> None:
     data_path = os.path.join("Data", manga_name)
     
@@ -398,15 +398,24 @@ def create_pdf(manga_name) -> None:
         if len(image_paths) == 0:
             print(f"No images found for volume {volume}. Skipping...")
             continue
-        else:
-            output_pdf_path = f"{manga_name}_Volume_{int(volume)+1}.pdf"
+        
+        output_dir = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name)
+        
+        # Ensure output directory exists
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        
+        output_pdf_path = os.path.join(output_dir, f"{manga_name}_Volume_{int(volume)+1}.pdf")
+
+        print(f"Saving volume {volume} as {output_pdf_path}...")
         
         try:
             with open(output_pdf_path, "wb") as output_file:
                 output_file.write(img2pdf.convert(image_paths))
         except Exception as e:
             print(f"Error writing PDF file {output_pdf_path}: {e}")
-
+            continue
+        
         print(f"Volume {volume} saved as {output_pdf_path}.")
 
 def main():

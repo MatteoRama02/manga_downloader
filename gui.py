@@ -1,3 +1,4 @@
+import shutil
 import sys
 import os
 from PyQt5.QtWidgets import *
@@ -93,6 +94,7 @@ class DownloadThread(QThread):
         
 
 class MyWindow(QMainWindow):
+
     def __init__(self):
         super().__init__()
         self.tray_icon = QSystemTrayIcon(QIcon('icon.jpg'), self)
@@ -193,6 +195,7 @@ class MyWindow(QMainWindow):
 
         self.download_manager_button = QPushButton("Open Download Manager", self)
         self.download_manager_button.clicked.connect(self.open_download_manager)
+        self.download_manager_button.setFixedHeight(50)
         main_layout.addWidget(self.download_manager_button)
         
     # Shows a toast notification every time the button is clicked
