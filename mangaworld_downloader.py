@@ -58,6 +58,38 @@ def research_manga(manga: str) -> dict[str, str]:
 
     return manga_dict
 
+def research_thumbnails() -> dict[str, str]:
+    """
+    Function that take a manga thumbnail and return 
+    the dictionary of all results
+
+    Returns:
+        dict[str, str]: dictionary of manga and their thumbnail link img
+    """
+    page = requests.get("https://www.mangaworld.ac/archive?status=ongoing&sort=most_read")
+    soup = bs4.BeautifulSoup(page.content, "html.parser")
+    results = soup.find("body")
+    job_all = results.find_all("a", class_="thumb position-relative")
+
+    # get the src of the img children in the a tag
+    
+    
+    # Create a dictionary to store manga titles and their thumbnail URLs
+    manga_dict = {}
+    i = 0
+    for job in job_all:
+        i+=1
+        if i > 5:
+            break
+        # Find the title of the manga
+        manga_title = job.get("title", "Unknown Manga")
+        # Find the URL of the thumbnail image
+        img_tag = job.find("img")
+        img_url = img_tag["src"] if img_tag and "src" in img_tag.attrs else "No Image URL"
+        # Add the title and image URL to the dictionary
+        manga_dict[manga_title] = img_url
+        
+    return manga_dict
 
 def manga_with_volumes_links(job_all: bs4.element.ResultSet) -> dict[str, list[str]]:
     """Return a dictionary with number of volumes and all the links for their chapters, for mangas that have volumes division
@@ -271,15 +303,14 @@ def create_data_volumes_folders(selected_manga: str, vol_chap_dict: dict[str, li
         vol_chap_dict (dict[str, list[str]]): dictionary with all volumes and list of links to their chapters
     """
     base_dir = os.path.abspath(os.curdir)
+        
+    if not os.path.exists("Data"):
+        os.mkdir("Data")
 
-    if  os.path.exists("Data"):
-        # remove the Data folder if already exists
-        shutil.rmtree("Data")
-        
-        
-    os.mkdir("Data")
     os.chdir("Data")
-
+    if os.path.exists(selected_manga):
+        shutil.rmtree(selected_manga)
+        
     os.mkdir(selected_manga)
     os.chdir(selected_manga)
 
@@ -290,25 +321,31 @@ def create_data_volumes_folders(selected_manga: str, vol_chap_dict: dict[str, li
     os.chdir(base_dir)
 
 
-def remove_data_folder() -> None:
+def remove_data_folder(manga_name) -> None:
     """Remove recursively all data in the Data folder
     """
-    shutil.rmtree("Data")
+    shutil.rmtree(os.path.join("Data", manga_name))
+    
+def create_pdf(vol_chap_num_pages: dict[str, list[str]], selected_manga: str) -> None:
+    """Create PDFs of every volume contained in the selected manga."""
+    if not isinstance(vol_chap_num_pages, dict):
+        raise ValueError("vol_chap_num_pages should be a dictionary.")
 
-
-def create_pdf(vol_chap_num_pages: dict[int, dict[int, int]], selected_manga: str) -> None:
-    """Create pdfs of every volume contained in the selected manga
-
-    Args:
-        vol_chap_num_pages (dict[int, dict[int, int]]): see @download_volumes_images function
-        selected_manga (str): manga selected
-    """
     for vol_num, chap_num_pag_dict in vol_chap_num_pages.items():
+        if not isinstance(chap_num_pag_dict, dict):
+            raise ValueError(f"chap_num_pag_dict for volume {vol_num} should be a dictionary.")
+        
         merger = PdfMerger()
 
         for chap_num, num_pages in chap_num_pag_dict.items():
-            for i in range(1, int(num_pages) + 1):
+            if not isinstance(num_pages, int):
+                raise ValueError(f"num_pages for chapter {chap_num} in volume {vol_num} should be an integer.")
+
+            for i in range(1, num_pages + 1):
                 image_path = os.path.join("Data", selected_manga, str(vol_num), f"{chap_num}_{i}.jpg")
+                if not os.path.isfile(image_path):
+                    raise FileNotFoundError(f"Image file {image_path} does not exist.")
+
                 image = Image.open(image_path)
                 
                 # Convert image to PDF
@@ -324,6 +361,49 @@ def create_pdf(vol_chap_num_pages: dict[int, dict[int, int]], selected_manga: st
             merger.write(output_file)
 
         merger.close()
+
+
+def create_pdf(manga_name) -> None:
+    data_path = os.path.join("Data", manga_name)
+    
+    for volume in os.listdir(data_path):
+        volume_path = os.path.join(data_path, volume)
+        if not os.path.isdir(volume_path):
+            continue
+        
+        merger = PdfMerger()
+        
+        chapter_list = os.listdir(volume_path)
+        
+        chapter_list.sort()
+        
+        for chapter in chapter_list:
+            chapter_path = os.path.join(volume_path, chapter)
+            if not os.path.isfile(chapter_path) or not chapter.lower().endswith('.jpg'):
+                continue
+            
+            try:
+                with Image.open(chapter_path) as img:
+                    # Convert image to PDF
+                    pdf_bytes = io.BytesIO()
+                    img.save(pdf_bytes, format='PDF')
+                    pdf_bytes.seek(0)
+                    
+                    # Add the PDF to the merger
+                    merger.append(pdf_bytes)
+            except Exception as e:
+                print(f"Error processing image {chapter_path}: {e}")
+        
+        
+        output_pdf_path = f"{manga_name}_Volume_{int(volume)+1}.pdf"
+        
+        try:
+            with open(output_pdf_path, "wb") as output_file:
+                merger.write(output_file)
+        except Exception as e:
+            print(f"Error writing PDF file {output_pdf_path}: {e}")
+        finally:
+            merger.close()
 
 
 def main():
@@ -351,7 +431,7 @@ def main():
 
     create_pdf(volume_chap_num_pages_dict, selected_manga)
 
-    remove_data_folder()
+    remove_data_folder(selected_manga)
 
 
 if __name__ == "__main__":

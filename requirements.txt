@@ -3,3 +3,4 @@ PyPDF2
 Pillow
 beautifulsoup4
 PyQt5
+pyqt-toast-notification
