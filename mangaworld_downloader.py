@@ -226,7 +226,7 @@ def download_chapter_images(chapter_url: str, vol_index: str, chap_index: str, s
         threads[i].join()
 
 
-def download_volumes_images(vol_chap_dict: dict[str, list[str]], selected_manga: str) -> dict[int, dict[int, int]]:
+def download_volumes_images(vol_chap_dict: dict[str, list[str]], selected_manga: str, incrementProgress) -> dict[int, dict[int, int]]:
     """Download all images in every volume of a specific manga
 
     Args:
@@ -237,7 +237,7 @@ def download_volumes_images(vol_chap_dict: dict[str, list[str]], selected_manga:
         dict[int, dict[int, int]]: dictionary of dictionary, with key=volume and the value is dictionary with key=chapter and value=number of images in the chapter
     """
     vol_chap_num_images_dict: dict[int, dict[int, int]] = {}
-
+    
     total_chapter: int = sum([len(chaps) for chaps in vol_chap_dict.values()])
     current_chapter: int = 0
 
@@ -251,8 +251,12 @@ def download_volumes_images(vol_chap_dict: dict[str, list[str]], selected_manga:
             download_chapter_images(chap_link, str(index_vol), str(
                 index_chap), selected_manga, number_of_images)
             current_chapter += 1
-            printProgressBar(current_chapter, total_chapter,
-                             prefix="Chapter download:", length=50)
+            
+            # calculate the percentage of the download having the current chapter and the total number of chapters
+            incrementProgress(current_chapter/total_chapter*100)            
+            
+            # printProgressBar(current_chapter, total_chapter,
+            #                  prefix="Chapter download:", length=50)
 
         vol_chap_num_images_dict[index_vol] = chap_num_pages_dict
 
@@ -268,6 +272,11 @@ def create_data_volumes_folders(selected_manga: str, vol_chap_dict: dict[str, li
     """
     base_dir = os.path.abspath(os.curdir)
 
+    if  os.path.exists("Data"):
+        # remove the Data folder if already exists
+        shutil.rmtree("Data")
+        
+        
     os.mkdir("Data")
     os.chdir("Data")
 
