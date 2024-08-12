@@ -2,14 +2,16 @@ import shutil
 import sys
 import os
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal,QTimer,QSize
 from PyQt5.QtGui import QPixmap,QIcon,QFont
 import requests
 from pyqttoast import Toast, ToastPreset, ToastPosition
 from mangaworld_downloader import research_thumbnails,research_manga, volumes_with_chapter_link, create_data_volumes_folders, download_volumes_images, create_pdf, remove_data_folder,number_of_images_in_chapter,download_chapter_images
 import platform
 import pygame
-
+import os
+import subprocess
+import platform
  
 def prevent_sleep():
     if platform.system() == "Windows":
@@ -92,9 +94,7 @@ class DownloadThread(QThread):
         while pygame.mixer.music.get_busy():
             pygame.time.Clock().tick(10)
         
-
 class MyWindow(QMainWindow):
-
     def __init__(self):
         super().__init__()
         self.tray_icon = QSystemTrayIcon(QIcon('icon.jpg'), self)
@@ -103,11 +103,10 @@ class MyWindow(QMainWindow):
         self.initUI()
         self.download_manager = DownloadManagerWindow()
 
-
     def initUI(self):
         # Set the title and size of the window
         self.setWindowTitle("MangaWorld Downloader")
-        self.setGeometry(100, 100, 600, 550)
+        self.setGeometry(100, 100, 850, 550)
 
         # Center the window
         self.center()
@@ -124,6 +123,7 @@ class MyWindow(QMainWindow):
 
         # Image label
         img = QLabel(self)
+        os.chdir(os.path.dirname(__file__))
         pixmap = QPixmap('src/img/MangaWorldLogo.svg')
 
         if not pixmap.isNull():
@@ -154,37 +154,21 @@ class MyWindow(QMainWindow):
         v_layout.addWidget(self.button, alignment=Qt.AlignCenter)
         h_layout.addLayout(v_layout)
 
+        limit = 6 
 
+        # Fetch URLs
         urls = research_thumbnails()
 
         trending_label_layout = QVBoxLayout()
-        trending_label = QLabel("Trending now:", self)
+        trending_label = QLabel("Top best score manga:", self)
         trending_label_layout.addWidget(trending_label, alignment=Qt.AlignCenter)
 
-        carousel_layout = QHBoxLayout()
+        carousel_layout = QVBoxLayout()
 
-        for title, url in list(urls.items())[:5]:  # Get the first 5 entries
-            label = QLabel(self)
-            
-            # Load the image data
-            pixmap = QPixmap()
-            pixmap.loadFromData(requests.get(url).content)
-            
-            if not pixmap.isNull():
-                pixmap = pixmap.scaled(150, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                label.setPixmap(pixmap)
-            else:
-                print("Failed to load image")
-            
-            # Set the tooltip with the title
-            label.setToolTip(title)
-            
-            # Set the size policy
-            label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            
-            # Add the label to the layout
-            carousel_layout.addWidget(label, alignment=Qt.AlignCenter)
-
+        # Create and add the carousel widget
+        self.carousel_widget = CarouselWidget(urls)
+        self.carousel_widget.thumbnail_clicked.connect(self.handle_thumbnail_click)  # Connect to the new slot
+        carousel_layout.addWidget(self.carousel_widget)
 
         main_layout.addLayout(title_img_layout)
         main_layout.addSpacing(20)
@@ -201,18 +185,14 @@ class MyWindow(QMainWindow):
     # Shows a toast notification every time the button is clicked
     def show_toast(self,titolo, messaggio, preset=ToastPreset.SUCCESS):
         toast = Toast(self)
-             # Init font
-        # Init font
         font = QFont('Times', 20, QFont.Weight.Bold)
-
-        # Set fonts
-        toast.setTitleFont(font)  # Default: QFont('Arial', 9, QFont.Weight.Bold)
-        toast.setTextFont(font)   # Default: QFont('Arial', 9)
-        toast.setPosition(ToastPosition.TOP_RIGHT)  # Default: ToastPosition.BOTTOM_RIGHT
-        toast.setDuration(5000)  # Hide after 5 seconds
+        toast.setTitleFont(font)
+        toast.setTextFont(font)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.setDuration(5000)
         toast.setTitle(titolo)
         toast.setText(messaggio)
-        toast.applyPreset(preset)  # Apply style preset
+        toast.applyPreset(preset)
         toast.show()     
         
     def center(self):
@@ -221,7 +201,6 @@ class MyWindow(QMainWindow):
         frame_geo.moveCenter(screen)
         self.move(frame_geo.topLeft())
 
-   
     def start_download(self):
         manga_name = self.line_edit.text()
         if not manga_name:
@@ -238,7 +217,7 @@ class MyWindow(QMainWindow):
             selected_manga = list(manga_dict.keys())[0]
             self.download_thread = DownloadThread(manga_name, selected_manga, manga_dict, parent=self)
             self.download_thread.progress.connect(self.update_progress)
-            self.download_thread.status_update.connect(self.handle_status_update)  # Connect to new method
+            self.download_thread.status_update.connect(self.handle_status_update)
             self.download_thread.start()
             self.download_manager.add_download(selected_manga, self.download_thread)
             self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
@@ -249,7 +228,7 @@ class MyWindow(QMainWindow):
             selected_manga = dialog.selected_manga
             self.download_thread = DownloadThread(manga_name, selected_manga, manga_dict, parent=self)
             self.download_thread.progress.connect(self.update_progress)
-            self.download_thread.status_update.connect(self.handle_status_update)  # Connect to new method
+            self.download_thread.status_update.connect(self.handle_status_update)
             self.download_thread.start()
             self.download_manager.add_download(selected_manga, self.download_thread)
             self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
@@ -260,15 +239,43 @@ class MyWindow(QMainWindow):
     def handle_status_update(self, status):
         self.show_toast("Download Status", status)
         if status == "Download completed":
-            # Optionally, you can trigger other actions here if needed
             pass
         
     def open_download_manager(self):
         self.download_manager.show()
+
     def update_progress(self, value):
         print(f"Progress: {value}%")
-     
-     
+
+    def handle_thumbnail_click(self, title):
+        manga_dict = research_manga(title)
+        
+        if not manga_dict:
+            QMessageBox.critical(self, "Error", "Manga not found")
+            return
+        
+        if len(manga_dict) == 1:
+            selected_manga = list(manga_dict.keys())[0]
+            self.download_thread = DownloadThread(title, selected_manga, manga_dict, parent=self)
+            self.download_thread.progress.connect(self.update_progress)
+            self.download_thread.status_update.connect(self.handle_status_update)
+            self.download_thread.start()
+            self.download_manager.add_download(selected_manga, self.download_thread)
+            self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
+        else:
+            dialog = MangaSelectionDialog(manga_dict, self)
+            if dialog.exec_() == QDialog.Accepted:
+                selected_manga = dialog.selected_manga
+                self.download_thread = DownloadThread(title, selected_manga, manga_dict, parent=self)
+                self.download_thread.progress.connect(self.update_progress)
+                self.download_thread.status_update.connect(self.handle_status_update)
+                self.download_thread.start()
+                self.download_manager.add_download(selected_manga, self.download_thread)
+                self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
+
+            else:
+                QMessageBox.information(self, "Cancelled", "No manga selected.")
+
         
 class ProgressBarWidget(QWidget):
     def __init__(self, parent=None):
@@ -290,6 +297,10 @@ class DownloadManagerWindow(QMainWindow):
         self.setWindowTitle("Download Manager")
         self.setGeometry(150, 150, 600, 400)
 
+        self.openMangaFolderButton = QPushButton("Open Manga Folder", self)
+        self.openMangaFolderButton.clicked.connect(self.open_folder_manga)
+        self.openMangaFolderButton.setFixedHeight(50)
+
         self.downloads_table = QTableWidget(self)
         # not editable
         self.downloads_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -302,7 +313,13 @@ class DownloadManagerWindow(QMainWindow):
         #status column width max content of the cell
         self.downloads_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
 
+        # on double click on a row, open the manga folder
+        self.downloads_table.cellDoubleClicked.connect(self.open_folder)
+        
+
+
         layout = QVBoxLayout()
+        layout.addWidget(self.openMangaFolderButton)
         layout.addWidget(self.downloads_table)
 
         container = QWidget()
@@ -310,6 +327,31 @@ class DownloadManagerWindow(QMainWindow):
         self.setCentralWidget(container)
 
         self.downloads = {}
+
+    def open_folder(self, row, column):
+        manga_name = self.downloads_table.item(row, 0).text()
+        folder_path = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader",  manga_name)
+        system = platform.system()
+        if system == "Windows":
+            os.startfile(folder_path)
+        elif system == "Darwin":  # macOS
+            subprocess.call(["open", folder_path])
+        elif system == "Linux":
+            subprocess.call(["xdg-open", folder_path])
+        else:
+            print("Unsupported operating system")
+            
+    def open_folder_manga(self):
+        folder_path = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader")
+        system = platform.system()
+        if system == "Windows":
+            os.startfile(folder_path)
+        elif system == "Darwin":  # macOS
+            subprocess.call(["open", folder_path])
+        elif system == "Linux":
+            subprocess.call(["xdg-open", folder_path])
+        else:
+            print("Unsupported operating system")
 
     def add_download(self, manga_name, download_thread):
         row_position = self.downloads_table.rowCount()
@@ -384,7 +426,80 @@ def choose_manga(manga_dict):
         return dialog.selected_manga
     else:
         return None
+    
+    
+    
+    
+class CarouselWidget(QWidget):
+    thumbnail_clicked = pyqtSignal(str)  # Signal to emit when a thumbnail is clicked
 
+    def __init__(self, urls, max_items=6, image_size=(120, 200), parent=None):
+        super().__init__(parent)
+        
+        self.urls = urls
+        self.max_items = max_items
+        self.image_size = image_size
+        self.current_index = 0
+        
+        self.init_ui()
+        
+        # Set up a timer to handle the animation
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_carousel)
+        self.timer.start(30000)  # Update every 30 seconds
+
+    def init_ui(self):
+        self.layout = QHBoxLayout(self)
+        self.buttons = []
+
+        # Create QPushButton widgets for the carousel
+        for _ in range(self.max_items):
+            button = QPushButton(self)
+            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            button.clicked.connect(self.on_thumbnail_clicked)
+            self.buttons.append(button)
+            self.layout.addWidget(button, alignment=Qt.AlignCenter)
+
+        self.update_carousel()
+
+    def update_carousel(self):
+        keys = list(self.urls.keys())
+        num_urls = len(keys)
+
+        # Clear current images
+        for button in self.buttons:
+            button.setIcon(QIcon())  # Clear the icon
+            button.setToolTip("")  # Clear the tooltip
+
+        # Update image buttons with the current set of 6 images
+        for i in range(self.max_items):
+            # Calculate the index for the current image
+            index = (self.current_index + i) % num_urls
+            title = keys[index]
+            url = self.urls[title]
+            
+            # Load the image data
+            pixmap = QPixmap()
+            pixmap.loadFromData(requests.get(url).content)
+            
+            if not pixmap.isNull():
+                pixmap = pixmap.scaled(*self.image_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                icon = QIcon(pixmap)
+                self.buttons[i].setIcon(icon)
+                self.buttons[i].setIconSize(QSize(*self.image_size))
+                self.buttons[i].setToolTip(title)
+            else:
+                self.buttons[i].setToolTip("Failed to load image")
+
+        # Move to the next index, ensuring wrap-around
+        self.current_index = (self.current_index + self.max_items) % num_urls
+
+    def on_thumbnail_clicked(self):
+        button = self.sender()
+        title = button.toolTip()
+        self.thumbnail_clicked.emit(title) 
+        
+        
 app = QApplication(sys.argv)
 
 window = MyWindow()

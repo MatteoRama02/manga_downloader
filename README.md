@@ -35,6 +35,7 @@ Un programma per scaricare manga da MangaWorld (sito italiano)
 - Choose Chapters
 - Remove downloading manga
 - Release package
+- Eng Site 
 
 # Windows User
 

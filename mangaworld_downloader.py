@@ -10,6 +10,7 @@ from PIL import Image
 from PyPDF2 import PdfMerger
 import io
 import img2pdf
+from typing import Dict
 
 RESEARCH_STRING = "https://www.mangaworld.so/archive?keyword="
 
@@ -64,38 +65,49 @@ def research_manga(manga: str) -> dict[str, str]:
 
     return manga_dict
 
-def research_thumbnails() -> dict[str, str]:
+def research_thumbnails() -> Dict[str, str]:
     """
-    Function that take a manga thumbnail and return 
-    the dictionary of all results
+    Function that fetches the top manga from the Jikan API, sorts them by score,
+    and returns a dictionary of the top 5 manga titles and their thumbnail links.
 
     Returns:
-        dict[str, str]: dictionary of manga and their thumbnail link img
+        dict[str, str]: Dictionary with manga titles as keys and their thumbnail image URLs as values.
     """
-    page = requests.get("https://www.mangaworld.ac/archive?status=ongoing&sort=most_read")
-    soup = bs4.BeautifulSoup(page.content, "html.parser")
-    results = soup.find("body")
-    job_all = results.find_all("a", class_="thumb position-relative")
+    
+    # URL for fetching top manga
+    url = "https://api.jikan.moe/v4/top/manga"
 
-    # get the src of the img children in the a tag
+    # Parameters for the API request
+    params = {
+        "page": 1,  # Specify page number
+        "type": "manga",  # Type of the top list
+        "order_by": "published"  # This might need to be adjusted depending on available fields
+    }
     
+    # Make the API request
+    response = requests.get(url, params=params)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        top_manga = response.json()
+    else:
+        print("Failed to retrieve data:", response.status_code)
+        return {}
     
-    # Create a dictionary to store manga titles and their thumbnail URLs
-    manga_dict = {}
-    i = 0
-    for job in job_all:
-        i+=1
-        if i > 5:
-            break
-        # Find the title of the manga
-        manga_title = job.get("title", "Unknown Manga")
-        # Find the URL of the thumbnail image
-        img_tag = job.find("img")
-        img_url = img_tag["src"] if img_tag and "src" in img_tag.attrs else "No Image URL"
-        # Add the title and image URL to the dictionary
-        manga_dict[manga_title] = img_url
-        
+    # Extract the manga list
+    manga_list = top_manga.get('data', [])
+
+    # Sort manga by score in descending order
+    sorted_manga = sorted(manga_list, key=lambda x: x.get('score', 0), reverse=True)
+    
+    # Get the top 5 manga and their thumbnails
+    manga_dict = {
+        manga['title']: manga['images']['webp']['large_image_url']
+        for manga in sorted_manga[:100]
+    }
+    
     return manga_dict
+
 
 def manga_with_volumes_links(job_all: bs4.element.ResultSet) -> dict[str, list[str]]:
     """Return a dictionary with number of volumes and all the links for their chapters, for mangas that have volumes division
