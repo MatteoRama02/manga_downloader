@@ -22,7 +22,7 @@ A Manga Downloader, source of the pages (for now) mangaworld.ac
 
 # Usage
 
-    python gui.py
+    python main.py
 
 
 ![alt text](https://raw.githubusercontent.com/MatteoRama02/manga_downloader/main/src/img/screenshot/main.png)
@@ -73,7 +73,7 @@ Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
 
 # Utilizzo
 
-    pitone gui.py
+    pitone main.py
 
 - Scrivi il nome del manga nell'input di testo
 - Se il nome è presente in molti manga, seleziona nella finestra che apparirà quello giusto
