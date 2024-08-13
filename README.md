@@ -73,7 +73,7 @@ Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
 
 # Utilizzo
 
-    pitone main.py
+    python main.py
 
 - Scrivi il nome del manga nell'input di testo
 - Se il nome è presente in molti manga, seleziona nella finestra che apparirà quello giusto
