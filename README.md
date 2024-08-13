@@ -24,11 +24,17 @@ A Manga Downloader, source of the pages (for now) mangaworld.ac
 
     python gui.py
 
+
+![alt text](https://raw.githubusercontent.com/MatteoRama02/manga_downloader/main/src/img/screenshot/main.png)
+
 - Write the name of the manga in the Text input
 - If the name is in many mangas, select in the window the right one
 - The manga will be exported in pdf foreach volume in the folder _/Documents/MangaDownloader_
 
 # Feature
+
+![alt_text](https://raw.githubusercontent.com/MatteoRama02/manga_downloader/main/src/img/screenshot/manager.png)
+
 
 - Check the status of the download in the Download Manager
 - MultiDownload
