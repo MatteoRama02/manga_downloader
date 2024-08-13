@@ -49,7 +49,7 @@ Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
 
 ---
 
-# Impostare
+# Setup
 
 ## Installa Python e le librerie
 
