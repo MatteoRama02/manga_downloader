@@ -42,20 +42,21 @@ class SplashScreen(QSplashScreen):
    
     def show_message(self, message):
         self.showMessage(message, Qt.AlignBottom | Qt.AlignCenter, Qt.white)
-        
+
+
 class DownloadThread(QThread):
     progress = pyqtSignal(int)
     status_update = pyqtSignal(str)  # Signal for status updates
-    
-    def __del__(self):
-        restore_sleep()
-        
+
     def __init__(self, manga_name, selectedManga, mangaDict, parent=None):
         super().__init__(parent)
         self.manga_name = manga_name
         self.selectedManga = selectedManga
         self.mangaDict = mangaDict
-        self.parent = parent
+        self._stop_flag = False
+
+    def stop(self):
+        self._stop_flag = True
 
     def run(self):
         selected_manga = self.selectedManga
@@ -72,28 +73,45 @@ class DownloadThread(QThread):
         current_chapter = 0
 
         for i, (vol_name, chapters) in enumerate(vol_chap_dict.items()):
+            if self._stop_flag:
+                self.status_update.emit("Download canceled")
+                return
+
             for j, chap_link in enumerate(chapters):
+                if self._stop_flag:
+                    self.status_update.emit("Download canceled")
+                    return
+                
                 number_of_images = number_of_images_in_chapter(chap_link)
                 download_chapter_images(chap_link, i, str(j), selected_manga, number_of_images)
 
                 current_chapter += 1
                 self.progress.emit(int((current_chapter / total_chapters) * 100))
 
-        self.status_update.emit(f"Generando i PDF....")
+        if self._stop_flag:
+            self.status_update.emit("Download canceled")
+            return
+
+        self.status_update.emit(f"Generating PDFs...")
         create_pdf(selected_manga)
         remove_data_folder(selected_manga)
-        self.status_update.emit(f"Pdf generati!")
+        self.status_update.emit(f"PDFs generated!")
         
-        # play sound when download is completed
+        if self._stop_flag:
+            return
+        
+        # Play sound when download is completed
         pygame.mixer.init()
-        # Load and play the sound
         pygame.mixer.music.load('src/sounds/finish.mp3')
         pygame.mixer.music.play()
 
-        # Keep the script running until the sound is finished
+        # Check the stop flag during sound playback
         while pygame.mixer.music.get_busy():
+            if self._stop_flag:
+                pygame.mixer.music.stop()
+                break
             pygame.time.Clock().tick(10)
-        
+
 class MyWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -306,12 +324,17 @@ class DownloadManagerWindow(QMainWindow):
         self.downloads_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         
         # Add the progress bar column
-        self.downloads_table.setColumnCount(3)
-        self.downloads_table.setHorizontalHeaderLabels(["Manga", "Status", "Progress"])
+        self.downloads_table.setColumnCount(4)
+        self.downloads_table.setHorizontalHeaderLabels(["Manga", "Status", "Progress",""])
         self.downloads_table.horizontalHeader().setStretchLastSection(True)
 
-        #status column width max content of the cell
-        self.downloads_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+             
+        # Set column resizing modes
+        self.downloads_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Status column
+        self.downloads_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)           # Progress column
+        self.downloads_table.setColumnWidth(3, 50)                                                     # Button column
+
+        self.downloads_table.horizontalHeader().setStretchLastSection(False)  # Ensure the last section doesn't stretch automatically
 
         # on double click on a row, open the manga folder
         self.downloads_table.cellDoubleClicked.connect(self.open_folder)
@@ -360,10 +383,16 @@ class DownloadManagerWindow(QMainWindow):
         manga_item = QTableWidgetItem(manga_name)
         status_item = QTableWidgetItem("Starting...")
         progress_widget = ProgressBarWidget()
+        trash_button = QPushButton()
+
+        trash_button.setFixedWidth(50)
+        trash_button.setIcon(QIcon("src/img/trash.png"))
+        trash_button.clicked.connect(lambda: self.remove_download(manga_name))
 
         self.downloads_table.setItem(row_position, 0, manga_item)
         self.downloads_table.setItem(row_position, 1, status_item)
         self.downloads_table.setCellWidget(row_position, 2, progress_widget)
+        self.downloads_table.setCellWidget(row_position, 3, trash_button)
 
         # Track download in the downloads dict
         self.downloads[manga_name] = (row_position, download_thread, progress_widget)
@@ -372,12 +401,50 @@ class DownloadManagerWindow(QMainWindow):
         download_thread.progress.connect(lambda progress, row=row_position: self.update_progress(row, progress))
 
     def update_status(self, row, status):
-        self.downloads_table.item(row, 1).setText(status)
+        item = self.downloads_table.item(row, 1)
+        if item is not None:
+            item.setText(status)
+        else:
+            print(f"Warning: Attempted to update status for a row {row} that does not exist or has been removed.")
+
 
     def update_progress(self, row, progress):
-        progress_widget = self.downloads[self.downloads_table.item(row, 0).text()][2]
-        progress_widget.set_progress(progress)
+        if row < 0 or row >= self.downloads_table.rowCount():
+            return  # Avoid accessing a row that doesn't exist
 
+        item = self.downloads_table.item(row, 0)
+        if item is None:
+            return  # Avoid accessing a non-existent item
+
+        progress_widget = self.downloads.get(item.text())
+        if progress_widget:
+            progress_widget[2].set_progress(progress)
+
+    def remove_download(self, manga_name):
+        
+        # Confirm the user wants to remove the download
+        reply = QMessageBox.question(self, "Remove Download", f"Are you sure you want to remove the download for {manga_name}?", QMessageBox.Yes | QMessageBox.No)
+        
+        if reply == QMessageBox.No:
+            return
+        else: 
+            row, download_thread, progress_widget = self.downloads[manga_name]
+            download_thread.stop()
+            self.downloads_table.removeRow(row)
+            #wait the kill of the thread
+            download_thread.wait()
+            try:
+                # Remove the manga folder in documents if it exist even if it has files
+                shutil.rmtree(os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name))
+            except FileNotFoundError:
+                pass
+            
+            try:
+                shutil.rmtree(os.path.join("Data", manga_name))
+            except FileNotFoundError:
+                pass
+            
+            del self.downloads[manga_name]
 
 class MangaSelectionDialog(QDialog):
     def __init__(self, manga_dict, parent=None):
