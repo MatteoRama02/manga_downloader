@@ -9,7 +9,7 @@ from src.carousel_widget import CarouselWidget
 from src.manga_selection_dialog import MangaSelectionDialog
 from src.utilities import prevent_sleep, restore_sleep, choose_manga
 import sys
-from src.mangaworld_downloader import research_manga, research_thumbnails
+from src.scraper.mangaworld_downloader import research_manga, research_thumbnails
 from pyqttoast import Toast, ToastPreset, ToastPosition
 
 class MyWindow(QMainWindow):
@@ -17,9 +17,14 @@ class MyWindow(QMainWindow):
         super().__init__()
         self.tray_icon = QSystemTrayIcon(QIcon('icon.jpg'), self)
         self.tray_icon.setVisible(True)  # Make sure the icon is visible
-
         self.initUI()
         self.download_manager = DownloadManagerWindow()
+        self.setup_shortcuts()
+
+    def setup_shortcuts(self):
+        # Create a shortcut for Ctrl+Q to close the window
+        close_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
+        close_shortcut.activated.connect(self.close)
 
     def initUI(self):
         # Set the title and size of the window

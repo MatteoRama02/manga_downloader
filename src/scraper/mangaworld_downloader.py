@@ -11,6 +11,9 @@ from PyPDF2 import PdfMerger
 import io
 import img2pdf
 from typing import Dict
+import cloudscraper
+import time
+
 
 RESEARCH_STRING = "https://www.mangaworld.so/archive?keyword="
 
@@ -228,29 +231,54 @@ def number_of_images_in_chapter(chapter_url: str) -> int:
 
     return number_of_images
 
-
-def download_image(image_url: str, vol_index: str, chap_index: str, image_index: str, selected_manga: str) -> None:
+def download_image(image_url: str, vol_index: str, chap_index: str, image_index: str, selected_manga: str, retries=3) -> None:
     """Download an image and save it to a folder (Data/{selected_manga}/{vol_index}/{chap_index}_{image_index}.jpg)
 
     Args:
-        image_url (str): url to download the image
-        vol_index (str): volume associated with that image
-        chap_index (str): chapter index in this volume
-        image_index (str): positional number of this image a specific chapter
-        selected_manga (str): manga selected
+        image_url (str): URL to download the image
+        vol_index (str): Volume associated with that image
+        chap_index (str): Chapter index in this volume
+        image_index (str): Positional number of this image in a specific chapter
+        selected_manga (str): Manga selected
+        retries (int): Number of retry attempts
     """
-    page = requests.get(image_url)
-    soup = bs4.BeautifulSoup(page.content, "html.parser")
-    results = soup.find("body")
-    image_link = results.find(
-        "div", class_="col-12 text-center position-relative").find("img", class_="img-fluid").get("src")
+    
+    scraper = cloudscraper.create_scraper()
+    success = False
+    
+    for attempt in range(retries):
+        try:
+            response = scraper.get(image_url)
 
-    image = requests.get(image_link, stream=True)
-    if image.status_code == 200:
-        image.raw.decode_content = True
-    with open(os.path.join("Data", selected_manga, str(vol_index), f"{chap_index}_{image_index}.jpg"), "wb") as f:
-        shutil.copyfileobj(image.raw, f)
+            if response.status_code == 520:
+                time.sleep(5)  # wait before retrying
+                continue  # retry if 520 error
+            
+            soup = bs4.BeautifulSoup(response.text, "html.parser")
+            results = soup.find("body")
 
+            if response.status_code != 200:
+                with open(f"{selected_manga}_error_{attempt+1}.html", "w") as f:
+                    f.write(soup.prettify())
+                continue  # retry if response is not OK
+
+            image_link = results.find(
+                "div", class_="col-12 text-center position-relative")
+            image_link = image_link.find("img", class_="img-fluid").get("src")
+
+            image = requests.get(image_link, stream=True)
+            if image.status_code == 200:
+                image.raw.decode_content = True
+                os.makedirs(os.path.join("Data", selected_manga, str(vol_index)), exist_ok=True)
+                with open(os.path.join("Data", selected_manga, str(vol_index), f"{chap_index}_{image_index}.jpg"), "wb") as f:
+                    shutil.copyfileobj(image.raw, f)
+            success = True
+            break  # exit retry loop on success
+        except Exception:
+            time.sleep(5)  # wait before retrying
+    
+    if not success:
+        print(f"Failed to download image after {retries} attempts: {image_url}")
 
 def download_chapter_images(chapter_url: str, vol_index: str, chap_index: str, selected_manga: str, number_of_images: int) -> None:
     """Download all images contained in a chapter and save it (see download_image function)

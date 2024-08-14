@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-from .mangaworld_downloader import volumes_with_chapter_link, create_data_volumes_folders, number_of_images_in_chapter, download_chapter_images, create_pdf, remove_data_folder
+from .scraper.mangaworld_downloader import volumes_with_chapter_link, create_data_volumes_folders, number_of_images_in_chapter, download_chapter_images, create_pdf, remove_data_folder
 import pygame
 
 class DownloadThread(QThread):
