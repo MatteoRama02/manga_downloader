@@ -22,7 +22,7 @@ A Manga Downloader, source of the pages (for now) mangaworld.ac
 
 # Usage
 
-    python gui.py
+    python main.py
 
 
 ![alt text](https://raw.githubusercontent.com/MatteoRama02/manga_downloader/main/src/img/screenshot/main.png)
@@ -73,7 +73,7 @@ Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
 
 # Utilizzo
 
-    pitone gui.py
+    python main.py
 
 - Scrivi il nome del manga nell'input di testo
 - Se il nome è presente in molti manga, seleziona nella finestra che apparirà quello giusto
@@ -93,3 +93,8 @@ Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
 # Utente Windows
 
 Non ho testato questo script su Windows, ma ho utilizzato i percorsi indipendenti dal sistema operativo. Quindi penso che funzionerà.
+
+## Crediti
+
+- La parte di recupero immagini di manga e ricerca dei nomi nel sito di MangaWorld è proveniente da [mangaworld_downloader]([link alla repository originale](https://github.com/lmarzocchetti/mangaworld_downloader), rilasciato sotto la licenza MIT.
+
