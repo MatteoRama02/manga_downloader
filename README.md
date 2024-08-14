@@ -93,3 +93,8 @@ Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
 # Utente Windows
 
 Non ho testato questo script su Windows, ma ho utilizzato i percorsi indipendenti dal sistema operativo. Quindi penso che funzionerà.
+
+## Crediti
+
+- La parte di recupero immagini di manga e ricerca dei nomi nel sito di MangaWorld è proveniente da [mangaworld_downloader]([link alla repository originale](https://github.com/lmarzocchetti/mangaworld_downloader), rilasciato sotto la licenza MIT.
+
