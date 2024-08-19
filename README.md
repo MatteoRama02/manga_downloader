@@ -1,6 +1,6 @@
 ### English Version
 
-A Manga Downloader, source of the pages [MangaWorld](mangaworld.ac) and [Comick](comick.io)
+A Manga Downloader, source of the pages [MangaWorld](https://www.mangaworld.ac/) and [Comick](https://comick.io/)
 
 ---
 
@@ -50,7 +50,7 @@ I haven't tested this script on Windows, but i have used the os independent path
 
 ### Versione Italiana
 
-Un Downloader di manga, fonte delle pagine  [MangaWorld](mangaworld.ac) e [Comick](comick.io)
+Un Downloader di manga, fonte delle pagine [MangaWorld](https://www.mangaworld.ac/) e [Comick](https://comick.io/)
 
 ---
 
@@ -94,6 +94,6 @@ Non ho testato questo script su Windows, ma ho utilizzato i percorsi indipendent
 
 ## Crediti
 
-- Le funzioni di recupero immagini di manga e ricerca dei nomi nel sito di MangaWorld è grazie alla repo ([mangaworld_downloader](https://github.com/lmarzocchetti/mangaworld_downloader), rilasciato sotto la licenza MIT.
-- Le funzioni di conversione PDF a MOBI è grazie alla repo ([kcc - Kindle Comic Converter](https://github.com/lmarzocchetti/mangaworld_downloader)
+- Le funzioni di recupero immagini di manga e ricerca dei nomi nel sito di MangaWorld è grazie alla repo [mangaworld_downloader](https://github.com/lmarzocchetti/mangaworld_downloader), rilasciato sotto la licenza MIT.
+- Le funzioni di conversione PDF a MOBI è grazie alla repo [kcc - Kindle Comic Converter](https://github.com/lmarzocchetti/mangaworld_downloader)
 
