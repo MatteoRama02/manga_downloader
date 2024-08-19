@@ -43,52 +43,70 @@ def create_webdriver(headless=True):
 # Function to search for manga using Selenium
 def research_manga_comick(manga_name: str) -> dict:
     driver = create_webdriver(headless=True)
+    try:
+        url = f"{URl_SITE}/search?q={urllib.parse.quote(manga_name)}"
+        driver.get(url)
+        
+        # Wait for search results to load
+        wait = WebDriverWait(driver, 10)
+        results = wait.until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, ".w-16.h-28")))
+        
+        # Extract manga names and URLs
+        manga_dict = {
+            result.find_element(By.TAG_NAME, "img").get_attribute("alt"): result.find_element(By.TAG_NAME, "a").get_attribute("href")
+            for result in results
+        }
+        
+    finally:
+        driver.quit()
     
-    url = f"{URl_SITE}/search?q={urllib.parse.quote(manga_name)}"
-    driver.get(url)
-    
-    # Wait for search results to load
-    wait = WebDriverWait(driver, 10)
-    results = wait.until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, ".w-16.h-28")))
-    
-    # Extract manga names and URLs
-    manga_dict = {
-        result.find_element(By.TAG_NAME, "img").get_attribute("alt"): result.find_element(By.TAG_NAME, "a").get_attribute("href")
-        for result in results
-    }
-    
-    driver.quit()
     return manga_dict
 
 # Function to get the URL of the first chapter
-def url_manga_first_chapter(manga_url: str) -> str:
+def url_manga_first_chapter(manga_url: str) -> dict:
     driver = create_webdriver(headless=True)
-    driver.get(manga_url)
+    try:
+        driver.get(manga_url)
+        
+        # Wait for the first chapter button to appear
+        wait = WebDriverWait(driver, 10)
+        button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".flex-1.h-12.btn.btn-primary.px-2.py-3.flex.items-center.rounded")))
+        
+        open ("html.html", "w").write(driver.page_source)
+        
+        max_chapters  = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".flex.justify-center.items-center.mb-3")))
+        
+        # extract the value of the second strong tag to get the number of chapters
+        max_chapters = max_chapters.find_elements(By.TAG_NAME, "strong")[1] 
+        
+        # innerHTML of the tag
+        max_chapters = max_chapters.get_attribute("innerHTML") 
+        
+        href = button.get_attribute("href")
+        
+        # href as key and the number of chapters as value
     
-    # Wait for the first chapter button to appear
-    wait = WebDriverWait(driver, 10)
-    button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".flex-1.h-12.btn.btn-primary.px-2.py-3.flex.items-center.rounded")))
+        
+    finally:
+        driver.quit()
     
-    href = button.get_attribute("href")
-    driver.quit()
-    
-    return href
+    return {href: max_chapters}
 
 # Function to fetch image URLs of a chapter
 def fetch_image_urls(chapter_url: str, max_retries=3):
     driver = create_webdriver(headless=True)
-    driver.get(chapter_url)
-
     retries = 0
+    image_urls = []
+    
     while retries < max_retries:
         try:
+            driver.get(chapter_url)
             wait = WebDriverWait(driver, 10)
             images = wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, "img")))
             image_urls = [img.get_attribute("src") for img in images if "meo." in img.get_attribute("src") or "meo3." in img.get_attribute("src")]
             
             if image_urls:
-                driver.quit()
-                return image_urls
+                break  # Exit if images are successfully fetched
             
             retries += 1
         except Exception as e:
@@ -97,7 +115,7 @@ def fetch_image_urls(chapter_url: str, max_retries=3):
         finally:
             driver.quit()
     
-    return []
+    return image_urls
 
 # Function to download a single image
 def download_image(url, folder_path, filename):
@@ -107,7 +125,6 @@ def download_image(url, folder_path, filename):
             with open(os.path.join(folder_path, filename), 'wb') as file:
                 for chunk in response.iter_content(1024):
                     file.write(chunk)
-            print(f"Image successfully downloaded: {filename}")
         else:
             print(f"Failed to download image: {filename}")
     except Exception as e:
@@ -123,17 +140,21 @@ def download_images_in_thread(image_urls, title, folder_path):
             if match:
                 # Extract the chapter string from the match
                 chapter_number = match.group(1)
-                print(f"Chapter number: {chapter_number}")
             else:
                 print("Chapter number not found")
             filename = f"{chapter_number} - {page}.{extension}"
             executor.submit(download_image, img_url, folder_path, filename)
-def download_chapters(chapter_url: str, manga_name: str, max_depth=5, current_depth=1, retries=3, delay=5):
+
+def download_chapters(chapter_url: str, manga_name: str, max_depth=5, current_depth=1, retries=3, delay=5, stop=False,total_chapters=0, ):
     if current_depth > max_depth:
         print(f"Reached maximum depth of {max_depth} chapters.")
         return
 
+    print(stop)
     print(f"Downloading Chapter {current_depth} from {chapter_url}")
+    
+    if stop:
+        return
     
     # Retry logic for downloading images
     for attempt in range(retries):
@@ -142,7 +163,7 @@ def download_chapters(chapter_url: str, manga_name: str, max_depth=5, current_de
             title = chapter_url.split("/")[-1]  # Assuming title is the last part of the URL
 
             # Create folder to store images
-            folder_path = os.path.join("Data", manga_name)
+            folder_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name)
             os.makedirs(folder_path, exist_ok=True)
 
             # Start downloading images in a separate thread
@@ -179,6 +200,7 @@ def download_chapters(chapter_url: str, manga_name: str, max_depth=5, current_de
                     href_next = None
             if href_next:
                 # Recursively download the next chapter
+                driver.quit()
                 download_chapters(href_next, manga_name, max_depth, current_depth + 1, retries, delay)
             else:
                 print("No more chapters found.")
@@ -191,20 +213,18 @@ def download_chapters(chapter_url: str, manga_name: str, max_depth=5, current_de
             else:
                 print(f"Failed to find the next chapter after {retries} attempts.")
                 return  # Exit the function if we can't find the next chapter
-        finally:
-            driver.quit()
 
 def create_pdf_comick(manga_name: str):
     
     # get file list
-    file_list = os.listdir(os.path.join(f"Data/{manga_name}"))
+    file_list = os.listdir(os.path.join(os.getcwd(),"src","scraper",f"Data/{manga_name}"))
     
     file_list.sort(key=extract_chapter_and_page_numbers)
     
     merger = PdfMerger()
     
     for file in file_list:
-        image_path = os.path.join("Data", manga_name, file)
+        image_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name, file)
         
         if not os.path.isfile(image_path):
             raise FileNotFoundError(f"Image file {image_path} does not exist.")
@@ -263,4 +283,4 @@ def example_main(manga_name: str, max_depth=5):
 
 
 if __name__ == "__main__":
-    example_main("uzumaki ito", max_depth=3)
+    example_main("ping pong", max_depth=3)

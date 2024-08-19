@@ -95,7 +95,7 @@ class DownloadManagerWindow(QMainWindow):
         trash_button = QPushButton()
 
         trash_button.setFixedWidth(50)
-        trash_button.setIcon(QIcon("img/trash.png"))
+        trash_button.setIcon(QIcon(os.path.join(os.getcwd(),"src","img","trash.png")))
         trash_button.clicked.connect(lambda: self.remove_download(manga_name))
 
         self.downloads_table.setItem(row_position, 0, manga_item)
@@ -111,19 +111,33 @@ class DownloadManagerWindow(QMainWindow):
         download_thread.start()
 
     def update_status(self, row, status):
-        self.downloads_table.item(row, 1).setText(status)
+        # Ensure the row still exists before updating the status
+        if self.downloads_table.item(row, 1):
+            self.downloads_table.item(row, 1).setText(status)
+
 
     def remove_download(self, manga_name):
         reply = QMessageBox.question(self, 'Confirmation',
-                                     f"Are you sure you want to delete the manga '{manga_name}'?",
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                                    f"Are you sure you want to delete the manga '{manga_name}'?",
+                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
             row_position, download_thread, progress_widget = self.downloads.get(manga_name, (None, None, None))
             if row_position is not None:
+                # Stop the thread
                 download_thread.stop()
+
+                # Disconnect signals to prevent further emissions
+                try:
+                    download_thread.status_update.disconnect()
+                    download_thread.progress.disconnect()
+                except Exception as e:
+                    print(f"Error while disconnecting signals: {e}")
+
+                # Remove the corresponding row and the folder
                 folder_path = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name)
                 shutil.rmtree(folder_path, ignore_errors=True)
                 self.downloads_table.removeRow(row_position)
                 del self.downloads[manga_name]
                 self.downloads_table.repaint()
+
