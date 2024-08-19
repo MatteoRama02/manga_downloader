@@ -62,7 +62,7 @@ class DownloadManagerWindow(QMainWindow):
 
     def open_folder(self, row, column):
         manga_name = self.downloads_table.item(row, 0).text()
-        folder_path = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name)
+        folder_path = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name.replace(' ', '_'))
         system = platform.system()
         if system == "Windows":
             os.startfile(folder_path)
@@ -116,7 +116,7 @@ class DownloadManagerWindow(QMainWindow):
             self.downloads_table.item(row, 1).setText(status)
 
 
-    def remove_download(self, manga_name):
+    def remove_download(self, manga_name :str):
         reply = QMessageBox.question(self, 'Confirmation',
                                     f"Are you sure you want to delete the manga '{manga_name}'?",
                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -135,7 +135,7 @@ class DownloadManagerWindow(QMainWindow):
                     print(f"Error while disconnecting signals: {e}")
 
                 # Remove the corresponding row and the folder
-                folder_path = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name)
+                folder_path = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name.replace(' ', '_'))
                 shutil.rmtree(folder_path, ignore_errors=True)
                 self.downloads_table.removeRow(row_position)
                 del self.downloads[manga_name]

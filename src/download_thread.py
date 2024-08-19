@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-from .scraper.mangaworld_downloader import volumes_with_chapter_link, create_data_volumes_folders, number_of_images_in_chapter, download_chapter_images, create_pdf, remove_data_folder
+from .scraper.mangaworld_downloader import volumes_with_chapter_link,create_pdf_mangaworld, create_data_volumes_folders, number_of_images_in_chapter, download_chapter_images, remove_data_folder
 from .scraper.comick_downloader import url_manga_first_chapter, download_chapters, create_pdf_comick,fetch_image_urls, download_images_in_thread, create_webdriver
 import pygame
 import os
@@ -7,7 +7,8 @@ import threading
 import time
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-
+import subprocess
+import sys
 class DownloadThread(QThread):
     progress = pyqtSignal(int)
     status_update = pyqtSignal(str)  # Signal for status updates
@@ -60,14 +61,21 @@ class DownloadThread(QThread):
     def comick_run(self):
         selected_manga = self.selectedManga
         manga_dict = self.mangaDict
-        
+
         manga_url = manga_dict[selected_manga]
         # Get the first chapter URL and download chapters
         first_chapter_data = url_manga_first_chapter(manga_url)
 
         # Get the first chapter URL and total chapters from the returned dictionary
         first_chapter_url = list(first_chapter_data.keys())[0]
-        total_chapters = int(first_chapter_data[first_chapter_url])
+        total_chapters_str = first_chapter_data[first_chapter_url]
+
+        try:
+            # Attempt to convert to an integer
+            total_chapters = int(float(total_chapters_str))
+        except ValueError:
+            print(f"Error converting '{total_chapters_str}' to integer")
+            total_chapters = 0  # or some default value
 
         self.download_comick_chapters(first_chapter_url, selected_manga, total_chapters)
 
@@ -131,6 +139,7 @@ class DownloadThread(QThread):
                     if href_next:
                         first_chapter_url = href_next  # Set the new chapter URL for the next iteration
                         current_depth += 1
+                        break
                     else:
                         return
                 except Exception as e:
@@ -142,12 +151,32 @@ class DownloadThread(QThread):
                         self.status_update.emit(f"Failed to find the next chapter after {retries} attempts.")
                         return  # Exit the function if we can't find the next chapter
 
+    def convert_pdf_to_mobi(self, pdf_path:str):
+        sanitized_pdf_path =  pdf_path.replace(' ', '_')
+        # Define the command to set the PATH and run the conversion
+        export_command = 'export PATH="/Applications/Kindle Previewer 3.app/Contents/lib/fc/bin/:$PATH"'
+        os.chdir(os.path.join(os.getcwd(), "src", "kcc"))
+        print(sanitized_pdf_path)
+        conversion_command = f'python kcc-c2e.py -p K11 -m -q {sanitized_pdf_path}'
+        print (conversion_command)
+        try:
+            # Run the export command and conversion command in a shell
+            full_command = f'{export_command}'
+            
+            subprocess.run(full_command, shell=True, check=True)
+            from .kcc.kindlecomicconverter.comic2ebook import main
+            main(["-p", "K11", "-m", "-q", sanitized_pdf_path])
+        except subprocess.CalledProcessError as e:
+            self.status_update.emit(f"Error during conversion: {e}")
+            return
+
+        
     def run(self):
         selected_manga = self.selectedManga
 
         if self.chooseSite == "MangaWorld - IT":
             self.mangaworld_run()
-            create_pdf(selected_manga)
+            create_pdf_mangaworld(selected_manga)
         else:
             self.comick_run()
             create_pdf_comick(selected_manga)
@@ -157,9 +186,14 @@ class DownloadThread(QThread):
         remove_data_folder(selected_manga)
         self.status_update.emit(f"PDFs generated!")
 
+        self.convert_pdf_to_mobi(os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", selected_manga,f"{selected_manga}.pdf")) 
         if self._stop_flag:
             return
+        self.status_update.emit(f"Ebook generated!")
         
+        # go 2 folders up to get to the root of the project
+        os.chdir(os.path.join(os.getcwd(), "..", ".."))
+                
         # Play sound when download is completed
         pygame.mixer.init()
         current_dir = os.path.dirname(os.path.abspath(__file__))

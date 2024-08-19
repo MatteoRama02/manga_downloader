@@ -72,13 +72,10 @@ def url_manga_first_chapter(manga_url: str) -> dict:
         wait = WebDriverWait(driver, 10)
         button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".flex-1.h-12.btn.btn-primary.px-2.py-3.flex.items-center.rounded")))
         
-        open ("html.html", "w").write(driver.page_source)
-        
         max_chapters  = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".flex.justify-center.items-center.mb-3")))
         
         # extract the value of the second strong tag to get the number of chapters
         max_chapters = max_chapters.find_elements(By.TAG_NAME, "strong")[1] 
-        
         # innerHTML of the tag
         max_chapters = max_chapters.get_attribute("innerHTML") 
         
@@ -145,74 +142,73 @@ def download_images_in_thread(image_urls, title, folder_path):
             filename = f"{chapter_number} - {page}.{extension}"
             executor.submit(download_image, img_url, folder_path, filename)
 
-def download_chapters(chapter_url: str, manga_name: str, max_depth=5, current_depth=1, retries=3, delay=5, stop=False,total_chapters=0, ):
-    if current_depth > max_depth:
-        print(f"Reached maximum depth of {max_depth} chapters.")
-        return
+def download_chapters(first_chapter_url: str, manga_name: str, total_chapters: int):
+        current_depth = 1
+        retries = 3
+        delay = 5
+        
+        while current_depth <= total_chapters:
 
-    print(stop)
-    print(f"Downloading Chapter {current_depth} from {chapter_url}")
-    
-    if stop:
-        return
-    
-    # Retry logic for downloading images
-    for attempt in range(retries):
-        try:
-            image_urls = fetch_image_urls(chapter_url)
-            title = chapter_url.split("/")[-1]  # Assuming title is the last part of the URL
+            # Retry logic for downloading images
+            for attempt in range(retries):
+                try:
+                    image_urls = fetch_image_urls(first_chapter_url)
+                    title = first_chapter_url.split("/")[-1]  # Assuming title is the last part of the URL
 
-            # Create folder to store images
-            folder_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name)
-            os.makedirs(folder_path, exist_ok=True)
+                    # Create folder to store images
+                    folder_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name)
+                    os.makedirs(folder_path, exist_ok=True)
 
-            # Start downloading images in a separate thread
-            download_thread = threading.Thread(target=download_images_in_thread, args=(image_urls, title, folder_path))
-            download_thread.start()
-            download_thread.join()  # Ensure the thread finishes before proceeding
-            break  # Exit the retry loop if successful
-        except Exception as e:
-            print(f"Error downloading images on attempt {attempt + 1}/{retries}: {e}")
-            if attempt < retries - 1:
-                print(f"Retrying in {delay} seconds...")
-                time.sleep(delay)
-            else:
-                print(f"Failed to download images after {retries} attempts.")
-                return  # Exit the function if we can't download images
-    
-    # Retry logic for fetching the next chapter URL
-    for attempt in range(retries):
-        try:
-            driver = create_webdriver(headless=True)
-            driver.get(chapter_url)
+                    # Start downloading images in a separate thread
+                    download_thread = threading.Thread(target=download_images_in_thread, args=(image_urls, title, folder_path))
+                    download_thread.start()
+                    
+                    
+                    
+                    break  # Exit the retry loop if successful
+                except Exception as e:
+                    print(f"Error downloading images on attempt {attempt + 1}/{retries}: {e}")
+                    if attempt < retries - 1:
+                        print(f"Retrying in {delay} seconds...")
+                        time.sleep(delay)
+                    else:
+                        print(f"Failed to download images after {retries} attempts.")
+                        return  # Exit the function if we can't download images
 
-            # Save the current page's HTML
-            try:
-                href_next = driver.find_element(By.CSS_SELECTOR, 
-                    ".relative.grow-0.w-full.flex.justify-center.h-28.md\\:h-32.xl\\:h-40.px-4.border-r.leading-5.border-gray-600.select-none.text-xl.bg-gray-100.hover\\:bg-gray-200.dark\\:bg-gray-700.dark\\:hover\\:bg-gray-600"
-                ).get_attribute("href")
-            except NoSuchElementException:
-                try: 
-                    href_next = driver.find_element(By.CSS_SELECTOR, 
-                        ".relative.grow-0.w-8\\/12.flex.justify-center.h-28.md\\:h-32.xl\\:h-40.px-4.border-r.leading-5.border-gray-600.select-none.text-xl.bg-gray-100.hover\\:bg-gray-200.dark\\:bg-gray-700.dark\\:hover\\:bg-gray-600"
-                    ).get_attribute("href")
-                except NoSuchElementException:
-                    href_next = None
-            if href_next:
-                # Recursively download the next chapter
-                driver.quit()
-                download_chapters(href_next, manga_name, max_depth, current_depth + 1, retries, delay)
-            else:
-                print("No more chapters found.")
-            break  # Exit the retry loop if successful
-        except Exception as e:
-            print(f"Error finding next chapter on attempt {attempt + 1}/{retries}: {e}")
-            if attempt < retries - 1:
-                print(f"Retrying in {delay} seconds...")
-                time.sleep(delay)
-            else:
-                print(f"Failed to find the next chapter after {retries} attempts.")
-                return  # Exit the function if we can't find the next chapter
+            # Retry logic for fetching the next chapter URL
+            for attempt in range(retries):
+                try:
+                    driver = create_webdriver(headless=True)
+                    driver.get(first_chapter_url)
+
+                    # Save the current page's HTML
+                    try:
+                        href_next = driver.find_element(By.CSS_SELECTOR, 
+                            ".relative.grow-0.w-full.flex.justify-center.h-28.md\\:h-32.xl\\:h-40.px-4.border-r.leading-5.border-gray-600.select-none.text-xl.bg-gray-100.hover\\:bg-gray-200.dark\\:bg-gray-700.dark\\:hover\\:bg-gray-600"
+                        ).get_attribute("href")
+                    except NoSuchElementException:
+                        try: 
+                            href_next = driver.find_element(By.CSS_SELECTOR, 
+                                ".relative.grow-0.w-8\\/12.flex.justify-center.h-28.md\\:h-32.xl\\:h-40.px-4.border-r.leading-5.border-gray-600.select-none.text-xl.bg-gray-100.hover\\:bg-gray-200.dark\\:bg-gray-700.dark\\:hover\\:bg-gray-600"
+                            ).get_attribute("href")
+                        except NoSuchElementException:
+                            href_next = None
+                    driver.quit()
+
+                    if href_next:
+                        first_chapter_url = href_next  # Set the new chapter URL for the next iteration\
+                        current_depth += 1
+                        break
+                    else:
+                        return
+                except Exception as e:
+                    print(f"Error finding next chapter on attempt {attempt + 1}/{retries}: {e}")
+                    if attempt < retries - 1:
+                        print(f"Retrying in {delay} seconds...")
+                        time.sleep(delay)
+                    else:
+                        print(f"Failed to find the next chapter after {retries} attempts.")
+                        return  # Exit the function if we can't find the next chapter
 
 def create_pdf_comick(manga_name: str):
     
@@ -224,9 +220,12 @@ def create_pdf_comick(manga_name: str):
     merger = PdfMerger()
     
     for file in file_list:
+        
+        
         image_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name, file)
         
         if not os.path.isfile(image_path):
+            print(f"Image file {image_path} does not exist.")
             raise FileNotFoundError(f"Image file {image_path} does not exist.")
 
         image = Image.open(image_path)
@@ -240,12 +239,12 @@ def create_pdf_comick(manga_name: str):
         merger.append(pdf_bytes)
 
     # Save the merged PDF
-    output_dir = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name)
+    output_dir = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name.replace(' ', '_'))
     
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    with open(os.path.join(output_dir,f"{manga_name}.pdf"), "wb") as output_file:
+    with open(os.path.join(output_dir,f"{manga_name.replace(' ', '_')}.pdf"), "wb") as output_file:
         merger.write(output_file)
 
     merger.close()
@@ -277,10 +276,15 @@ def example_main(manga_name: str, max_depth=5):
         manga_url = manga_data[first_manga_name]
 
         # Get the first chapter URL and download chapters
-        first_chapter_url = url_manga_first_chapter(manga_url)
+        first_chapter_data = url_manga_first_chapter(manga_url)
+        
+        first_chapter_url = list(first_chapter_data.keys())[0]
+        
+        total_chapters = int(first_chapter_data[first_chapter_url])
+        
         if first_chapter_url:
-            download_chapters(first_chapter_url, first_manga_name, max_depth)
+            download_chapters(first_chapter_url, first_manga_name,total_chapters)
 
 
 if __name__ == "__main__":
-    example_main("ping pong", max_depth=3)
+    example_main("uzumaki", max_depth=3)

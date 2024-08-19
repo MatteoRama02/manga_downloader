@@ -408,7 +408,7 @@ def create_pdf(vol_chap_num_pages: dict[str, list[str]], selected_manga: str) ->
 
         merger.close()
         
-def create_pdf(manga_name) -> None:
+def create_pdf(manga_name:str) -> None:
     data_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name)
     
     for volume in os.listdir(data_path):
@@ -439,24 +439,66 @@ def create_pdf(manga_name) -> None:
             print(f"No images found for volume {volume}. Skipping...")
             continue
         
-        output_dir = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name)
+        output_dir = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name.replace(' ', '_'))
         
         # Ensure output directory exists
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
-        output_pdf_path = os.path.join(output_dir, f"{manga_name}_Volume_{int(volume)+1}.pdf")
+    output_pdf_path = os.path.join(output_dir, f"{manga_name}.pdf")
 
-        print(f"Saving volume {volume} as {output_pdf_path}...")
+    output_pdf_path = output_pdf_path.replace(' ', '_')
+
+    print(f"Saving volume {volume} as {output_pdf_path}...")
+    
+    try:
+        with open(output_pdf_path, "wb") as output_file:
+            output_file.write(img2pdf.convert(image_paths))
+    except Exception as e:
+        print(f"Error writing PDF file {output_pdf_path}: {e}")
+    
+    print(f"Saved as {output_pdf_path}.")
+
+def create_pdf_mangaworld(manga_name:str) -> None:
+    # get file list
+    folder_list = os.listdir(os.path.join(os.getcwd(),"src","scraper",f"Data",manga_name))
+    
+    merger = PdfMerger()
+    
+    for volume in folder_list:
         
-        try:
-            with open(output_pdf_path, "wb") as output_file:
-                output_file.write(img2pdf.convert(image_paths))
-        except Exception as e:
-            print(f"Error writing PDF file {output_pdf_path}: {e}")
-            continue
         
-        print(f"Volume {volume} saved as {output_pdf_path}.")
+        # get file list
+        file_list = os.listdir(os.path.join(os.getcwd(),"src","scraper",f"Data",manga_name,volume))
+        
+        file_list.sort(key=natural_sort_key)
+        for file in file_list:
+            
+            image_path = os.path.join(os.getcwd(),"src","scraper",f"Data",manga_name,volume, file)
+            
+            if not os.path.isfile(image_path):
+                raise FileNotFoundError(f"Image file {image_path} does not exist.")
+
+            image = Image.open(image_path)
+            
+            # Convert image to PDF
+            pdf_bytes = io.BytesIO()
+            image.save(pdf_bytes, format='PDF')
+            pdf_bytes.seek(0)
+            
+            # Add PDF page to merger
+            merger.append(pdf_bytes)
+    
+      # Save the merged PDF
+    output_dir = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name.replace(' ', '_'))
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    with open(os.path.join(output_dir,f"{manga_name.replace(' ', '_')}.pdf"), "wb") as output_file:
+        merger.write(output_file)
+
+    merger.close()
 
 def main():
     if len(sys.argv) != 2:
