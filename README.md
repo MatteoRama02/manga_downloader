@@ -95,5 +95,5 @@ Non ho testato questo script su Windows, ma ho utilizzato i percorsi indipendent
 ## Crediti
 
 - Le funzioni di recupero immagini di manga e ricerca dei nomi nel sito di MangaWorld è grazie alla repo [mangaworld_downloader](https://github.com/lmarzocchetti/mangaworld_downloader), rilasciato sotto la licenza MIT.
-- Le funzioni di conversione PDF a MOBI è grazie alla repo [kcc - Kindle Comic Converter](https://github.com/lmarzocchetti/mangaworld_downloader)
+- Le funzioni di conversione PDF a MOBI è grazie alla repo [kcc - Kindle Comic Converter](https://github.com/ciromattia/kcc)
 
