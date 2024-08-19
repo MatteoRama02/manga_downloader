@@ -26,6 +26,10 @@ class MyWindow(QMainWindow):
         self.download_manager = DownloadManagerWindow()
         self.setup_shortcuts()
         
+	if not os.path.exists(os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader"):
+        	os.mkdir(os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader")
+
+
         # Initialize choose as an instance variable
         self.choose = "MangaWorld - IT"  # Default value
 
@@ -51,6 +55,8 @@ class MyWindow(QMainWindow):
 
         # Title label
         titolo = QLabel("MangaWorld Downloader", self)
+	
+	
 
         # Combobox
         combobox = QComboBox(self)
