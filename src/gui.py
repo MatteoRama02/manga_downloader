@@ -29,6 +29,9 @@ class MyWindow(QMainWindow):
         if not os.path.exists(os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader")):
             os.mkdir(os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader"))
 
+        if not os.path.exists(os.path.join(os.getcwd(),"Data")):
+            os.mkdir(os.path.join(os.getcwd(),"Data"))
+            
         # Initialize choose as an instance variable
         self.choose = "MangaWorld - IT"  # Default value
 

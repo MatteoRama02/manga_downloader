@@ -156,7 +156,7 @@ def download_chapters(first_chapter_url: str, manga_name: str, total_chapters: i
                     title = first_chapter_url.split("/")[-1]  # Assuming title is the last part of the URL
 
                     # Create folder to store images
-                    folder_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name)
+                    folder_path = os.path.join(os.getcwd(),"Data", manga_name)
                     os.makedirs(folder_path, exist_ok=True)
 
                     # Start downloading images in a separate thread
@@ -222,7 +222,7 @@ def create_pdf_comick(manga_name: str):
     for file in file_list:
         
         
-        image_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name, file)
+        image_path = os.path.join(os.getcwd(),"Data", manga_name, file)
         
         if not os.path.isfile(image_path):
             print(f"Image file {image_path} does not exist.")

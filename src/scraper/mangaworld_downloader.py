@@ -269,8 +269,8 @@ def download_image(image_url: str, vol_index: str, chap_index: str, image_index:
             image = requests.get(image_link, stream=True)
             if image.status_code == 200:
                 image.raw.decode_content = True
-                os.makedirs(os.path.join(os.getcwd(),"src","scraper","Data", selected_manga, str(vol_index)), exist_ok=True)
-                with open(os.path.join(os.getcwd(),"src","scraper","Data", selected_manga, str(vol_index), f"{chap_index}_{image_index}.jpg"), "wb") as f:
+                os.makedirs(os.path.join(os.getcwd(),"Data", selected_manga, str(vol_index)), exist_ok=True)
+                with open(os.path.join(os.getcwd(),"Data", selected_manga, str(vol_index), f"{chap_index}_{image_index}.jpg"), "wb") as f:
                     shutil.copyfileobj(image.raw, f)
             success = True
             break  # exit retry loop on success
@@ -461,7 +461,7 @@ def create_pdf(manga_name:str) -> None:
 
 def create_pdf_mangaworld(manga_name:str) -> None:
     # get file list
-    folder_list = os.listdir(os.path.join(os.getcwd(),"src","scraper",f"Data",manga_name))
+    folder_list = os.listdir(os.path.join(os.getcwd(),f"Data",manga_name))
     
     merger = PdfMerger()
     
@@ -469,12 +469,12 @@ def create_pdf_mangaworld(manga_name:str) -> None:
         
         
         # get file list
-        file_list = os.listdir(os.path.join(os.getcwd(),"src","scraper",f"Data",manga_name,volume))
+        file_list = os.listdir(os.path.join(os.getcwd(),f"Data",manga_name,volume))
         
         file_list.sort(key=natural_sort_key)
         for file in file_list:
             
-            image_path = os.path.join(os.getcwd(),"src","scraper",f"Data",manga_name,volume, file)
+            image_path = os.path.join(os.getcwd(),f"Data",manga_name,volume, file)
             
             if not os.path.isfile(image_path):
                 raise FileNotFoundError(f"Image file {image_path} does not exist.")
