@@ -1,6 +1,6 @@
 ### English Version
 
-A Manga Downloader, source of the pages (for now) mangaworld.ac
+A Manga Downloader, source of the pages [MangaWorld](mangaworld.ac) and [Comick](comick.io)
 
 ---
 
@@ -29,7 +29,7 @@ A Manga Downloader, source of the pages (for now) mangaworld.ac
 
 - Write the name of the manga in the Text input
 - If the name is in many mangas, select in the window the right one
-- The manga will be exported in pdf foreach volume in the folder _/Documents/MangaDownloader_
+- The manga will be exported in pdf and mobi in the folder _/Documents/MangaDownloader_
 
 # Feature
 
@@ -43,7 +43,6 @@ A Manga Downloader, source of the pages (for now) mangaworld.ac
 
 - Choose Chapters
 - Release package
-- Implement other website (Comick)
 
 # Windows User
 
@@ -51,7 +50,7 @@ I haven't tested this script on Windows, but i have used the os independent path
 
 ### Versione Italiana
 
-Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
+Un Downloader di manga, fonte delle pagine  [MangaWorld](mangaworld.ac) e [Comick](comick.io)
 
 ---
 
@@ -77,7 +76,7 @@ Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
 
 - Scrivi il nome del manga nell'input di testo
 - Se il nome è presente in molti manga, seleziona nella finestra che apparirà quello giusto
-- Il manga verrà esportato in pdf per ogni volume nella cartella _/Documents/MangaDownloader_
+- Il manga verrà esportato in pdf e mobi nella cartella _/Documents/MangaDownloader_
 
 # Funzionalità
 
@@ -88,7 +87,6 @@ Un Downloader di manga, fonte delle pagine (per ora) mangaworld.ac
 
 - Sceglta capitoli
 - Pacchetto di rilascio
-- Implementare un altro sito Web (Comick)
 
 # Utente Windows
 
@@ -96,5 +94,6 @@ Non ho testato questo script su Windows, ma ho utilizzato i percorsi indipendent
 
 ## Crediti
 
-- La parte di recupero immagini di manga e ricerca dei nomi nel sito di MangaWorld è proveniente da [mangaworld_downloader]([link alla repository originale](https://github.com/lmarzocchetti/mangaworld_downloader), rilasciato sotto la licenza MIT.
+- Le funzioni di recupero immagini di manga e ricerca dei nomi nel sito di MangaWorld è grazie alla repo ([mangaworld_downloader](https://github.com/lmarzocchetti/mangaworld_downloader), rilasciato sotto la licenza MIT.
+- Le funzioni di conversione PDF a MOBI è grazie alla repo ([kcc - Kindle Comic Converter](https://github.com/lmarzocchetti/mangaworld_downloader)
 
