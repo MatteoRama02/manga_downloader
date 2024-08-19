@@ -1,3 +1,4 @@
+
 ### English Version
 
 A Manga Downloader, source of the pages [MangaWorld](https://www.mangaworld.ac/) and [Comick](https://comick.io/)
@@ -44,10 +45,6 @@ A Manga Downloader, source of the pages [MangaWorld](https://www.mangaworld.ac/)
 - Choose Chapters
 - Release package
 
-# Windows User
-
-I haven't tested this script on Windows, but i have used the os independent paths. So i think its gonna work.
-
 ### Versione Italiana
 
 Un Downloader di manga, fonte delle pagine [MangaWorld](https://www.mangaworld.ac/) e [Comick](https://comick.io/)
@@ -87,10 +84,6 @@ Un Downloader di manga, fonte delle pagine [MangaWorld](https://www.mangaworld.a
 
 - Sceglta capitoli
 - Pacchetto di rilascio
-
-# Utente Windows
-
-Non ho testato questo script su Windows, ma ho utilizzato i percorsi indipendenti dal sistema operativo. Quindi penso che funzionerà.
 
 ## Crediti
 
