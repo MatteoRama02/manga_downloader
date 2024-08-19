@@ -350,10 +350,10 @@ def create_data_volumes_folders(selected_manga: str, vol_chap_dict: dict[str, li
     """
     base_dir = os.path.abspath(os.curdir)
         
-    if not os.path.exists(os.path.join(os.getcwd(),"src","scraper","Data")):
-        os.mkdir((os.path.join(os.getcwd(),"src","scraper","Data")))
+    if not os.path.exists(os.path.join(os.getcwd(),"Data")):
+        os.mkdir((os.path.join(os.getcwd(),"Data")))
 
-    os.chdir((os.path.join(os.getcwd(),"src","scraper","Data")))
+    os.chdir((os.path.join(os.getcwd(),"Data")))
     if os.path.exists(selected_manga):
         shutil.rmtree(selected_manga)
         
@@ -370,7 +370,7 @@ def create_data_volumes_folders(selected_manga: str, vol_chap_dict: dict[str, li
 def remove_data_folder(manga_name) -> None:
     """Remove recursively all data in the Data folder
     """
-    shutil.rmtree(os.path.join(os.getcwd(),"src","scraper","Data", manga_name))
+    shutil.rmtree(os.path.join(os.getcwd(),"Data", manga_name))
     
 def create_pdf(vol_chap_num_pages: dict[str, list[str]], selected_manga: str) -> None:
     """Create PDFs of every volume contained in the selected manga."""
@@ -388,7 +388,7 @@ def create_pdf(vol_chap_num_pages: dict[str, list[str]], selected_manga: str) ->
                 raise ValueError(f"num_pages for chapter {chap_num} in volume {vol_num} should be an integer.")
 
             for i in range(1, num_pages + 1):
-                image_path = os.path.join(os.getcwd(),"src","scraper","Data", selected_manga, str(vol_num), f"{chap_num}_{i}.jpg")
+                image_path = os.path.join(os.getcwd(),"Data", selected_manga, str(vol_num), f"{chap_num}_{i}.jpg")
                 if not os.path.isfile(image_path):
                     raise FileNotFoundError(f"Image file {image_path} does not exist.")
 
@@ -409,7 +409,7 @@ def create_pdf(vol_chap_num_pages: dict[str, list[str]], selected_manga: str) ->
         merger.close()
         
 def create_pdf(manga_name:str) -> None:
-    data_path = os.path.join(os.getcwd(),"src","scraper","Data", manga_name)
+    data_path = os.path.join(os.getcwd(),"Data", manga_name)
     
     for volume in os.listdir(data_path):
         volume_path = os.path.join(data_path, volume)
