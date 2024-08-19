@@ -25,7 +25,7 @@ A Manga Downloader, source of the pages (for now) mangaworld.ac
     python main.py
 
 
-![alt text](https://raw.githubusercontent.com/MatteoRama02/manga_downloader/main/src/img/screenshot/main.png)
+![alt text](https://raw.githubusercontent.com/MatteoRama02/manga_downloader/main/src/img/screenshot/main2.png)
 
 - Write the name of the manga in the Text input
 - If the name is in many mangas, select in the window the right one
