@@ -36,7 +36,7 @@ def create_webdriver(headless=True):
     user_agent = random.choice(user_agents)
     chrome_options.add_argument(f"user-agent={user_agent}")
     
-    webdriver_service = Service('src/utils/chromedriver/127.0.6533.99/chromedriver-mac-arm64/chromedriver')  # Update this path if necessary
+    webdriver_service = Service(os.path.join(os.getcwd(),"src","utils","chromedriver","127.0.6533.99","chromedriver-mac-arm64","chromedriver")) # Update this path if necessary
     driver = webdriver.Chrome(service=webdriver_service, options=chrome_options)
     return driver
 
