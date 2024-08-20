@@ -16,6 +16,7 @@ from selenium.common.exceptions import NoSuchElementException
 from PIL import Image
 from PyPDF2 import PdfMerger
 import io
+import platform
 
 URl_SITE = "https://comick.io"
 
@@ -36,7 +37,16 @@ def create_webdriver(headless=True):
     user_agent = random.choice(user_agents)
     chrome_options.add_argument(f"user-agent={user_agent}")
     
-    webdriver_service = Service(os.path.join(os.getcwd(),"src","utils","chromedriver","127.0.6533.99","chromedriver-mac-arm64","chromedriver")) # Update this path if necessary
+   # Detect the operating system
+    if platform.system() == "Darwin":  # macOS
+        webdriver_path = os.path.join(os.getcwd(),"src","utils","chromedriver","127.0.6533.99","chromedriver-mac-arm64","chromedriver")
+    elif platform.system() == "Windows":  # Windows
+        webdriver_path = os.path.join(os.getcwd(),"src","utils","chromedriver","127.0.6533.99","chromedriver_win32","chromedriver.exe")
+    else:
+        raise Exception("Unsupported operating system")
+    
+    webdriver_service = Service(webdriver_path)
+
     driver = webdriver.Chrome(service=webdriver_service, options=chrome_options)
     return driver
 
