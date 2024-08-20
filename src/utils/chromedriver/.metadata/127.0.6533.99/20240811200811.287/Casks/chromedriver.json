@@ -1,0 +1,166 @@
+{
+  "full_token": "chromedriver",
+  "old_tokens": [
+
+  ],
+  "tap": "homebrew/cask",
+  "name": [
+    "ChromeDriver"
+  ],
+  "desc": "Automated testing of webapps for Google Chrome",
+  "homepage": "https://chromedriver.chromium.org/",
+  "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-arm64/chromedriver-mac-arm64.zip",
+  "url_specs": {
+    "verified": "storage.googleapis.com/chrome-for-testing-public/"
+  },
+  "version": "127.0.6533.99",
+  "installed": null,
+  "installed_time": null,
+  "bundle_version": null,
+  "bundle_short_version": null,
+  "outdated": false,
+  "sha256": "e0391d8b90ba75cb847b062fcbad05e66e329f36f99465ab245b3543ee2f6a92",
+  "artifacts": [
+    {
+      "binary": [
+        "chromedriver-mac-arm64/chromedriver"
+      ]
+    }
+  ],
+  "caveats": null,
+  "depends_on": {
+  },
+  "conflicts_with": {
+    "cask": [
+      "chromedriver@beta"
+    ]
+  },
+  "container": null,
+  "auto_updates": null,
+  "deprecated": false,
+  "deprecation_date": null,
+  "deprecation_reason": null,
+  "disabled": false,
+  "disable_date": null,
+  "disable_reason": null,
+  "tap_git_head": "96e8c14095c8dd17ef140f454ced6b339c81eb89",
+  "languages": [
+
+  ],
+  "ruby_source_path": "Casks/c/chromedriver.rb",
+  "ruby_source_checksum": {
+    "sha256": "635e8744f1aae9676b0323fa021499fbdef0a9dc8b6555062a6ece48a1960860"
+  },
+  "variations": {
+    "sequoia": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "sonoma": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "ventura": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "monterey": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "big_sur": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "catalina": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "mojave": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "high_sierra": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "sierra": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    },
+    "el_capitan": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/mac-x64/chromedriver-mac-x64.zip",
+      "sha256": "12fcf7f49e28dc525d25b62c1719a72e267d42231e66db5c6d3b59eb00155e84",
+      "artifacts": [
+        {
+          "binary": [
+            "chromedriver-mac-x64/chromedriver"
+          ]
+        }
+      ]
+    }
+  }
+}
