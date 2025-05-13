@@ -7,3 +7,13 @@ __pycache__
 gui.spec
 See
 /.vscode
+src/utils/chromedriver/.metadata/config.json
+src/utils/chromedriver/.metadata/config.json
+src/utils/chromedriver/.metadata/INSTALL_RECEIPT.json
+src/utils/chromedriver/.metadata/127.0.6533.99/20240811200811.287/Casks/chromedriver.json
+src/utils/chromedriver/127.0.6533.99/chromedriver-mac-arm64/chromedriver
+src/utils/chromedriver/127.0.6533.99/chromedriver-mac-arm64/LICENSE.chromedriver
+src/utils/chromedriver/127.0.6533.99/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver
+src/utils/chromedriver/127.0.6533.99/chromedriver_win32/chromedriver.exe
+src/utils/chromedriver/127.0.6533.99/chromedriver_win32/LICENSE.chromedriver
+src/utils/chromedriver/127.0.6533.99/chromedriver_win32/THIRD_PARTY_NOTICES.chromedriver
