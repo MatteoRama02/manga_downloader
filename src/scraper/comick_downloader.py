@@ -39,9 +39,9 @@ def create_webdriver(headless=True):
     
    # Detect the operating system
     if platform.system() == "Darwin":  # macOS
-        webdriver_path = os.path.join(os.getcwd(),"src","utils","chromedriver","127.0.6533.99","chromedriver-mac-arm64","chromedriver")
+        webdriver_path = os.path.join(os.getcwd(),"src","utils","chromedriver","136","mac","chromedriver")
     elif platform.system() == "Windows":  # Windows
-        webdriver_path = os.path.join(os.getcwd(),"src","utils","chromedriver","127.0.6533.99","chromedriver_win32","chromedriver.exe")
+        webdriver_path = os.path.join(os.getcwd(),"src","utils","chromedriver","136","chromedriver_win32","chromedriver.exe")
     else:
         raise Exception("Unsupported operating system")
     
@@ -50,54 +50,90 @@ def create_webdriver(headless=True):
     driver = webdriver.Chrome(service=webdriver_service, options=chrome_options)
     return driver
 
-# Function to search for manga using Selenium
 def research_manga_comick(manga_name: str) -> dict:
     driver = create_webdriver(headless=True)
     try:
-        url = f"{URl_SITE}/search?q={urllib.parse.quote(manga_name)}"
-        driver.get(url)
+        search_url = f"{URl_SITE}/search?q={urllib.parse.quote(manga_name)}"
+        driver.get(search_url)
+
+        wait = WebDriverWait(driver, 15)
         
-        # Wait for search results to load
+        # CHECK IF THE COOKIE ARE ACCEPTED fc-button fc-cta-consent fc-primary-button
+        try:
+            cookie_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".fc-button.fc-cta-consent.fc-primary-button")))
+            cookie_button.click()
+        except NoSuchElementException:
+            print("Cookie button not found or already accepted.")
+        # Wait for the images to load
         wait = WebDriverWait(driver, 10)
-        results = wait.until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, ".w-16.h-28")))
-        
-        # Extract manga names and URLs
+     
+        # get all the img tags and their alt attributes w-16 h-24
+        images = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "img.w-16.h-24")))
+
+
         manga_dict = {
-            result.find_element(By.TAG_NAME, "img").get_attribute("alt"): result.find_element(By.TAG_NAME, "a").get_attribute("href")
-            for result in results
+            img.get_attribute("alt"): img.find_element(By.XPATH, "./ancestor::a").get_attribute("href")
+            for img in images
         }
-        
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        driver.save_screenshot("error_screenshot.png")
+        manga_dict = {}
+
     finally:
         driver.quit()
-    
+
     return manga_dict
 
-# Function to get the URL of the first chapter
+
 def url_manga_first_chapter(manga_url: str) -> dict:
     driver = create_webdriver(headless=True)
     try:
         driver.get(manga_url)
+
+        wait = WebDriverWait(driver, 15)
+
+
+        # CHECK IF THE COOKIE ARE ACCEPTED fc-button fc-cta-consent fc-primary-button
+        try:
+            cookie_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".fc-button.fc-cta-consent.fc-primary-button")))
+            cookie_button.click()
+        except NoSuchElementException:
+            print("Cookie button not found or already accepted.")
+            
+        # Wait for the first chapter button flex-1 md:w-96 h-12 btn btn-primary px-2 py-3 flex items-center rounded flex truncate flex-1
+        button =    wait.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, ".flex-1.md\\:w-96.h-12.btn.btn-primary.px-2.py-3.flex.items-center.rounded.flex.truncate.flex-1")
+        ))
+        # Get the text of the button
         
-        # Wait for the first chapter button to appear
-        wait = WebDriverWait(driver, 10)
-        button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".flex-1.h-12.btn.btn-primary.px-2.py-3.flex.items-center.rounded")))
-        
-        max_chapters  = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".flex.justify-center.items-center.mb-3")))
-        
-        # extract the value of the second strong tag to get the number of chapters
-        max_chapters = max_chapters.find_elements(By.TAG_NAME, "strong")[1] 
-        # innerHTML of the tag
-        max_chapters = max_chapters.get_attribute("innerHTML") 
-        
+        # Wait for the max chapter section
+        max_chapters_container = wait.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, ".flex.justify-center.items-center.my-3")
+        ))
+
+        # Get list of <strong> tags
+        strong_tags = max_chapters_container.find_elements(By.TAG_NAME, "strong")
+        if len(strong_tags) >= 2:
+            max_chapters = strong_tags[1].get_attribute("innerHTML").strip()
+        else:
+            max_chapters = "N/A"
+
         href = button.get_attribute("href")
-        
-        # href as key and the number of chapters as value
-    
-        
+
+        return {href: max_chapters}
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        with open("debug_first_chapter.html", "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
+        driver.save_screenshot("debug_first_chapter.png")
+        return {}
+
     finally:
         driver.quit()
-    
-    return {href: max_chapters}
+
 
 # Function to fetch image URLs of a chapter
 def fetch_image_urls(chapter_url: str, max_retries=3):

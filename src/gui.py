@@ -12,9 +12,7 @@ import sys
 from src.scraper.mangaworld_downloader import research_manga, research_thumbnails
 from src.scraper.comick_downloader import research_manga_comick
 from pyqttoast import Toast, ToastPreset, ToastPosition
-
-
-
+from src.chapterTransformer import MangaToPdf
 
 class MyWindow(QMainWindow):
 
@@ -117,11 +115,22 @@ class MyWindow(QMainWindow):
         self.download_manager_button.clicked.connect(self.open_download_manager)
         self.download_manager_button.setFixedHeight(50)
         main_layout.addWidget(self.download_manager_button)
+        self.mangapdffer = QPushButton("Transform into pdf", self)
+        self.mangapdffer.setFixedHeight(50)
+        self.mangapdffer.clicked.connect(self.open_manga_to_pdf)
+        main_layout.addWidget(self.mangapdffer)
+        
     
     def choose_manga_site(self, value):
         # Update the instance variable
         self.choose = value
         print(f"Selected site: {self.choose}")  # For debugging purposes
+    
+    
+    def open_manga_to_pdf(self):
+        # Open the manga to pdf window
+        self.manga_to_pdf_window = MangaToPdf()
+        self.manga_to_pdf_window.show()
     
     # Shows a toast notification every time the button is clicked
     def show_toast(self, titolo, messaggio, preset=ToastPreset.SUCCESS):
@@ -171,6 +180,13 @@ class MyWindow(QMainWindow):
             self.download_thread = DownloadThread(manga_name, selected_manga, manga_dict,self.choose, parent=self)
             self.download_thread.progress.connect(self.update_progress)
             self.download_thread.status_update.connect(self.handle_status_update)
+            
+            generateEbook = QMessageBox.question(self, 'Ebook Generation',
+                            f"Do you want to generate an ebook for {manga_name}?",
+                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        
+            self.download_thread._generateEbook = generateEbook
+            
             self.download_thread.start()
             self.download_manager.add_download(selected_manga, self.download_thread)
             self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
@@ -182,6 +198,11 @@ class MyWindow(QMainWindow):
             self.download_thread = DownloadThread(manga_name, selected_manga, manga_dict,self.choose, parent=self)
             self.download_thread.progress.connect(self.update_progress)
             self.download_thread.status_update.connect(self.handle_status_update)
+            generateEbook = QMessageBox.question(self, 'Ebook Generation',
+                            f"Do you want to generate an ebook for {manga_name}?",
+                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        
+            self.download_thread._generateEbook = generateEbook
             self.download_thread.start()
             self.download_manager.add_download(selected_manga, self.download_thread)
             self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
@@ -211,6 +232,11 @@ class MyWindow(QMainWindow):
             self.download_thread = DownloadThread(title, selected_manga, manga_dict, parent=self)
             self.download_thread.progress.connect(self.update_progress)
             self.download_thread.status_update.connect(self.handle_status_update)
+            generateEbook = QMessageBox.question(self, 'Ebook Generation',
+                            f"Do you want to generate an ebook for {selected_manga}?",
+                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        
+            self.download_thread._generateEbook = generateEbook
             self.download_thread.start()
             self.download_manager.add_download(selected_manga, self.download_thread)
             self.show_toast("Download Started", f"Downloading manga: {selected_manga}")
@@ -221,6 +247,11 @@ class MyWindow(QMainWindow):
                 self.download_thread = DownloadThread(title, selected_manga, manga_dict, parent=self)
                 self.download_thread.progress.connect(self.update_progress)
                 self.download_thread.status_update.connect(self.handle_status_update)
+                generateEbook = QMessageBox.question(self, 'Ebook Generation',
+                            f"Do you want to generate an ebook for {selected_manga}?",
+                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        
+                self.download_thread._generateEbook = generateEbook
                 self.download_thread.start()
                 self.download_manager.add_download(selected_manga, self.download_thread)
                 self.show_toast("Download Started", f"Downloading manga: {selected_manga}")

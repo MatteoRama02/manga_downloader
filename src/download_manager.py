@@ -106,6 +106,7 @@ class DownloadManagerWindow(QMainWindow):
         # Track download in the downloads dict
         self.downloads[manga_name] = (row_position, download_thread, progress_widget)
 
+ 
         download_thread.status_update.connect(lambda status, row=row_position: self.update_status(row, status))
         download_thread.progress.connect(progress_widget.set_progress)
         download_thread.start()

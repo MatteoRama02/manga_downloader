@@ -459,47 +459,47 @@ def create_pdf(manga_name:str) -> None:
     
     print(f"Saved as {output_pdf_path}.")
 
-def create_pdf_mangaworld(manga_name:str) -> None:
-    # get file list
-    folder_list = os.listdir(os.path.join(os.getcwd(),f"Data",manga_name))
-    
+ 
+def create_pdf_mangaworld(manga_name: str) -> None:
+    import os
+    import io
+    from PIL import Image
+    from PyPDF2 import PdfMerger
+    import re
+
+    def natural_sort_key(s: str):
+        return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
+
+    folder_list = os.listdir(os.path.join(os.getcwd(), "Data", manga_name))
+    folder_list.sort(key=natural_sort_key)
+
     merger = PdfMerger()
-    
+
     for volume in folder_list:
-        
-        
-        # get file list
-        file_list = os.listdir(os.path.join(os.getcwd(),f"Data",manga_name,volume))
-        
+        file_list = os.listdir(os.path.join(os.getcwd(), "Data", manga_name, volume))
         file_list.sort(key=natural_sort_key)
+
         for file in file_list:
-            
-            image_path = os.path.join(os.getcwd(),f"Data",manga_name,volume, file)
-            
+            image_path = os.path.join(os.getcwd(), "Data", manga_name, volume, file)
+
             if not os.path.isfile(image_path):
                 raise FileNotFoundError(f"Image file {image_path} does not exist.")
 
             image = Image.open(image_path)
-            
-            # Convert image to PDF
             pdf_bytes = io.BytesIO()
             image.save(pdf_bytes, format='PDF')
             pdf_bytes.seek(0)
-            
-            # Add PDF page to merger
             merger.append(pdf_bytes)
-    
-      # Save the merged PDF
+
     output_dir = os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", manga_name.replace(' ', '_'))
-    
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    
-    with open(os.path.join(output_dir,f"{manga_name.replace(' ', '_')}.pdf"), "wb") as output_file:
+    os.makedirs(output_dir, exist_ok=True)
+
+    with open(os.path.join(output_dir, f"{manga_name.replace(' ', '_')}.pdf"), "wb") as output_file:
         merger.write(output_file)
 
     merger.close()
 
+ 
 def main():
     if len(sys.argv) != 2:
         print("Insert a manga to research!", file=sys.stderr)

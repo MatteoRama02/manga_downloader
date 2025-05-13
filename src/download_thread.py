@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QMessageBox
 from .scraper.mangaworld_downloader import volumes_with_chapter_link,create_pdf_mangaworld, create_data_volumes_folders, number_of_images_in_chapter, download_chapter_images, remove_data_folder
 from .scraper.comick_downloader import url_manga_first_chapter, download_chapters, create_pdf_comick,fetch_image_urls, download_images_in_thread, create_webdriver
 import pygame
@@ -8,7 +9,6 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 import subprocess
-import sys
 class DownloadThread(QThread):
     progress = pyqtSignal(int)
     status_update = pyqtSignal(str)  # Signal for status updates
@@ -161,7 +161,7 @@ class DownloadThread(QThread):
         print (conversion_command)
         try:
             # Run the export command and conversion command in a shell
-            full_command = f'{export_command}'
+            full_command = f'{export_command} && {conversion_command}'
             
             subprocess.run(full_command, shell=True, check=True)
             from .kcc.kindlecomicconverter.comic2ebook import main
@@ -173,6 +173,8 @@ class DownloadThread(QThread):
         
     def run(self):
         selected_manga = self.selectedManga
+
+
 
         if self.chooseSite == "MangaWorld - IT":
             self.mangaworld_run()
@@ -186,10 +188,12 @@ class DownloadThread(QThread):
         remove_data_folder(selected_manga)
         self.status_update.emit(f"PDFs generated!")
 
-        self.convert_pdf_to_mobi(os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", selected_manga,f"{selected_manga}.pdf")) 
         if self._stop_flag:
             return
-        self.status_update.emit(f"Ebook generated!")
+
+        if self._generateEbook == QMessageBox.Yes:            
+            self.convert_pdf_to_mobi(os.path.join(os.path.expanduser("~"), "Documents", "MangaDownloader", selected_manga,f"{selected_manga}.pdf")) 
+            self.status_update.emit(f"Ebook generated!")
         
         # go 2 folders up to get to the root of the project
         os.chdir(os.path.join(os.getcwd(), "..", ".."))
